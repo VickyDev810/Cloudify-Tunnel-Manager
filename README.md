@@ -1,4 +1,4 @@
-# Cloudify 🚇
+# Cloudify 
 **Tunnel management with ease**
 
 Cloudify lets you manage tunnel services in one go. You can expose your routes and maintain them with ease. Built upon Cloudflare services, you get robust tunnels with security, all running locally on your platform with no third-party dependencies except for cloudflared.
