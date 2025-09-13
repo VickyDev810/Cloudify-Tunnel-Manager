@@ -53,10 +53,11 @@ curl -O https://github.com/VickyDev810/Cloudify-Tunnel-Manager/blob/main/install
 bash final.sh
 ````
 
-### Windows
+### Windows (BETA)
 
-Download and install the executable file from the releases section.
-**📝 Note:** Run the exe as administrator.
+1. Download the .exe file from the Releases section.
+2. Right-click the downloaded file and select Run as administrator to install.
+3. When running commands on Windows, make sure to use administrator privileges (e.g., open Command Prompt or PowerShell as Administrator).
 
 ### Docker
 
