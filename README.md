@@ -274,4 +274,3 @@ If you find this project helpful, consider supporting its development:
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/vickydev810)
 
-## 📄 License
