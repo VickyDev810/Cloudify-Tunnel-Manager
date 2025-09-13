@@ -56,6 +56,7 @@ bash final.sh
 ### Windows
 
 Download and install the executable file from the releases section.
+**📝 Note:** Run the exe as administrator.
 
 ### Docker
 
