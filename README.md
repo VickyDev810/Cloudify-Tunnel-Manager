@@ -50,7 +50,7 @@ We've made installation easy across most operating systems and environments.
 ### Linux/macOS
 
 ```bash
-curl -O https://github.com/VickyDev810/Cloudify-Tunnel-Manager/blob/main/install_scripts/final.sh
+curl -O https://raw.githubusercontent.com/VickyDev810/cloudify-v1/main/install_scripts/final.sh
 bash final.sh
 ````
 
