@@ -9,6 +9,7 @@ Cloudify lets you manage tunnel services in one go. You can expose your routes a
 - Both CLI and frontend interface
 - Cross-platform support (Linux, macOS, Windows, Docker)
 - Auto-restart functionality for tunnels
+- Directly Use on AWS,AZURE and GCP
 
 ## 📋 Table of Contents
 
