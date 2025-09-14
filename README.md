@@ -33,7 +33,8 @@ Cloudify lets you manage tunnel services in one go. You can expose your routes a
 
 ## 📋 Prerequisites 
 
-Before installing Cloudify, ensure you have these setup or you can just install and run a temporary tunnel using [Quick Tunnel](#quick-tunnel-no-setup-required) :
+You can just install and run a temporary tunnel using [Quick Tunnel](#quick-tunnel-no-setup-required) for full functionalities
+these are the requirements:
 
 1. **Domain** - A domain name for your tunnels
 2. **Cloudflare Account** - With your domain added for full functionality
@@ -50,8 +51,7 @@ We've made installation easy across most operating systems and environments.
 ### Linux/macOS
 
 ```bash
-curl -O https://raw.githubusercontent.com/VickyDev810/cloudify-tunnel-manager/main/install_scripts/final.sh
-bash final.sh
+curl -fsSLO https://raw.githubusercontent.com/VickyDev810/cloudify-tunnel-manager/main/install_scripts/final.sh && bash final.sh
 ````
 
 ### Windows (BETA)
