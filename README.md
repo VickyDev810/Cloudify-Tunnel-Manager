@@ -48,17 +48,25 @@ Set up your Cloudflare account and add your domain:
 
 We've made installation easy across most operating systems and environments.
 
-### Linux/macOS
+### Linux
 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/VickyDev810/cloudify-tunnel-manager/main/install_scripts/final.sh && bash final.sh
-````
+```
 
 ### Windows (BETA)
 
 1. Download the .exe file from the Releases section.
 2. Right-click the downloaded file and select Run as administrator to install.
 3. When running commands on Windows, make sure to use administrator privileges (e.g., open Command Prompt or PowerShell as Administrator).
+
+
+### Mac Os
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/VickyDev810/cloudify-tunnel-manager/main/install_scripts/mac.sh && bash mac.sh
+```
+
 
 ### Docker
 
