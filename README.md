@@ -88,6 +88,10 @@ docker build -t cloudify:latest .
 > ```bash
 > source ~/.bashrc  # or ~/.zshrc
 > ```
+> for mac
+> ```bash
+> source ~/.zprofile # or ~/.zshrc
+> ```
 
 ## ⚙️ Initial Setup
 
