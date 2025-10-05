@@ -6,4 +6,4 @@ pydantic>=1.8.0
 pyyaml
 passlib>=1.7.4
 python-multipart
-bcrypt>=4.3.0
+bcrypt==4.3.0
