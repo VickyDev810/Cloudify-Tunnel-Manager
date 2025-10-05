@@ -21,7 +21,7 @@ setup(
         "pyyaml",
         "passlib>=1.7.4",
         "python-multipart",
-        "bcrypt>=4.3.0"
+        "bcrypt==4.3.0"
     ],
     entry_points={
         "console_scripts": [
