@@ -19,9 +19,9 @@ setup(
         "requests>=2.25.0",
         "pydantic>=1.8.0",
         "pyyaml",
-        "passlib",
+        "passlib>=1.7.4",
         "python-multipart",
-        "bcrypt"
+        "bcrypt>=4.3.0"
     ],
     entry_points={
         "console_scripts": [
