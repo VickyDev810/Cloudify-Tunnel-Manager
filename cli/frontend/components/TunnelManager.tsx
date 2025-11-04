@@ -370,7 +370,7 @@ export default function TunnelManager({ initialTunnels }: TunnelManagerProps) {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="endUrl">End User URL</label>
+                <label htmlFor="endUrl">Your Local Url(eg. localhost)</label>
                 <input
                   type="text"
                   id="endUrl"
