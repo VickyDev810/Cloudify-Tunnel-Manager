@@ -1,0 +1,43 @@
+# Cloudify with automatic restart. From the repository root:
+#   docker compose -f docker/docker-compose.yml up -d
+# (or `cd docker && docker compose up -d`)
+#
+# restart: unless-stopped -> the container (and every tunnel with auto-start
+# enabled) comes back after a server reboot or a crash, unless you stopped it
+# yourself with `docker compose stop`.
+name: cloudify  # project name: volume "cloudify_cloudify-data", network "cloudify"
+
+services:
+  cloudify:
+    image: cloudify:latest   # built locally from this repository
+    pull_policy: build       # always build from this checkout; never pull an image named like this
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: cloudify
+    restart: unless-stopped
+    ports:
+      # Dashboard on this machine only. To open it from other devices, prefer an SSH tunnel
+      # (ssh -L 8765:localhost:8765 server) or a tunnel route protected by Cloudflare Access;
+      # "8765:8765" publishes plain HTTP to your whole network (see docs/security.md).
+      - "127.0.0.1:8765:8765"
+    volumes:
+      # Cloudflare login, tunnel credentials/configs, Cloudify accounts
+      - cloudify-data:/root/.cloudflared
+    networks:
+      - cloudify
+
+  # Example service to expose; in the dashboard add a route to host "frontend", port 80.
+  # Put your own containers on the same network instead.
+  # frontend:
+  #   image: nginx:alpine
+  #   restart: unless-stopped
+  #   networks:
+  #     - cloudify
+
+volumes:
+  cloudify-data:
+
+networks:
+  cloudify:
+    name: cloudify

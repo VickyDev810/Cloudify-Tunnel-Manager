@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+users.json
+status.json
+output.log
+.pytest_cache/
+
+# Secrets that must never be committed (Cloudflare certificates, tunnel credentials,
+# exported replica files, local environment files)
+.env
+.env.*
+*.pem
+*.key
+cloudify-replica-*.json
+accounts.json
