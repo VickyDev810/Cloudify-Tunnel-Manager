@@ -6,7 +6,10 @@ set -euo pipefail
 trap 'echo "FAILED at line $LINENO: $BASH_COMMAND"' ERR
 MODE="${1:-local}"
 if [ "$MODE" = git ]; then
-    git config --global --add safe.directory '*' 2>/dev/null || true
+    # /src belongs to another user (e.g. the CI runner), which git refuses to clone ("dubious
+    # ownership"). git isn't installed yet (the installer adds it), so `git config` can't be used:
+    # write the setting into the user's git configuration directly.
+    printf '[safe]\n\tdirectory = *\n' >> "$HOME/.gitconfig"
     ARGS=(--repo /src --branch "$2")
 else
     ARGS=(--local /src)
