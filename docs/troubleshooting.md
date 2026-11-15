@@ -67,6 +67,7 @@ Logs: `~/.cloudflared/logs/<name>.log` (tunnels started directly), `journalctl -
 | `cloudify -p` prints no URL | The machine can't reach Cloudflare, or TryCloudflare is temporarily unavailable. Try again; check outbound HTTPS. |
 | The temporary URL shows error 1033 after a while | The process was stopped (closed terminal, Ctrl+C); quick tunnels end with it. |
 | SSH sharing problems | See [SSH sharing → Troubleshooting](ssh.md#troubleshooting). |
+| Is anything still reachable from the Internet? | Run the [safety check](security.md#safety-check). It lists every temporary tunnel, SSH sharing session and persistent tunnel, and `--kill` stops the temporary ones. |
 
 ## Networks with restrictions
 

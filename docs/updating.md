@@ -106,7 +106,15 @@ This removes the program (pipx environment, virtualenv, launcher, and a 1.x `pip
 * `~/.cloudflared` with configs, credentials, logins and Cloudify's settings;
 * cloudflared itself.
 
-To remove everything:
+To remove everything at once, use the [safety check](security.md#safety-check). It stops all tunnels,
+removes the auto-start entries, and uninstalls Cloudify and cloudflared. Add `--purge` to also delete
+`~/.cloudflared`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --remove
+```
+
+Or step by step:
 
 1. Delete tunnels you no longer need **before** uninstalling: dashboard → *Delete*, or
    `cloudify tunnel delete <name>` (also removes auto-start, and DNS records when DNS cleanup is on).

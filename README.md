@@ -325,6 +325,32 @@ cloudify -ssh remote --code cfyssh1.... --password xxxx-xxxx-xxxx-xxxx
 
 Details, security model and code layout: [`cloudify/ssh/README.md`](cloudify/ssh/README.md).
 
+## 🛡️ Safety check: see and stop everything
+
+`safety-check.sh` shows everything on a machine that is reachable through Cloudflare, and can stop it or
+remove Cloudify completely. It needs only bash, so it also works where Cloudify isn't installed (or was
+already removed), and it changes nothing unless you ask:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash                          # list (changes nothing)
+curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --kill             # stop temporary tunnels and SSH sharing
+curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --kill-all         # also persistent tunnels and the dashboard (asks first)
+curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --remove           # uninstall Cloudify and cloudflared, remove auto-start (asks first)
+curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --remove --purge   # ...and delete ~/.cloudflared (certificates, tunnel keys)
+```
+
+It lists:
+
+* temporary tunnels, with their public `trycloudflare.com` address and the local service behind them;
+* SSH sharing sessions, and the programs that remotes are running;
+* outgoing SSH sessions;
+* persistent tunnels, and what keeps them running (systemd, launchd, cron, Docker);
+* the dashboard, and whether the network can reach it;
+* what starts at boot, and what is installed.
+
+Tunnel tokens are never shown. From a checkout, run `bash safety-check.sh [--kill | --kill-all | --remove [--purge]]`.
+Details: [docs/security.md](docs/security.md#safety-check).
+
 ## 💻 CLI Usage
 
 ### Basic Commands
@@ -489,6 +515,7 @@ cloudify/
 docker/           Dockerfile, entrypoint, compose file
 docs/             user documentation
 install.sh        installer/updater for Linux and macOS
+safety-check.sh   lists and stops everything reachable through Cloudflare; removes Cloudify (needs only bash)
 tests/            pytest suite; tests/fakes/ has a fake cloudflared, systemctl and crontab
 ```
 
@@ -499,7 +526,7 @@ pip install playwright && playwright install chromium
 pytest tests/test_ui.py                  # browser test of the whole dashboard
 CLOUDIFY_REAL_CLOUDFLARED=$(which cloudflared) pytest tests/test_quick_tunnel.py  # real quick tunnel
 CLOUDIFY_DOCKER_TESTS=1 pytest tests/test_docker.py   # builds the image, tests restart/upgrade
-CLOUDIFY_INSTALL_TESTS=1 pytest tests/test_install.py # install.sh on 7 distributions + updates from 1.x (Docker)
+CLOUDIFY_INSTALL_TESTS=1 pytest tests/test_install.py # install.sh on 7 distributions, updates from 1.x, safety-check.sh (Docker)
 ```
 
 The tests use fakes for `cloudflared`, `systemctl`, `crontab` and `loginctl`, so they never touch

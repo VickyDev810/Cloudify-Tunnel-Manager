@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+# Used by tests/install/safety.sh and tests/test_safety_check.py (never by Cloudify itself).
+# Stand-in for `cloudify -p PORT`: starts a quick tunnel and stops it on SIGTERM
+import os, signal, subprocess, sys, time
+port = sys.argv[sys.argv.index("-p") + 1]
+here = os.path.dirname(os.path.abspath(__file__))
+metrics = os.environ.get("STANDIN_METRICS", "127.0.0.1:20311")
+child = subprocess.Popen([os.path.join(here, "cloudflared"), "tunnel", "--no-autoupdate", "--metrics", metrics,
+                          "--url", "http://localhost:" + port])
+def stop(*a):
+    child.terminate(); child.wait(); sys.exit(0)
+signal.signal(signal.SIGTERM, stop)
+while True:
+    time.sleep(3600)

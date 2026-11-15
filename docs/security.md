@@ -89,10 +89,58 @@ ever deletes a `CNAME` that points at the exact tunnel being changed.
 Every route makes a local service reachable from the internet, without a login unless the service has one. For
 admin panels, databases, home-automation and other private services, add a **Cloudflare Access** policy to the
 hostname in the Cloudflare dashboard (Zero Trust → Access → Applications). Temporary tunnels (`cloudify -p`) are
-public too, with a hard-to-guess but unauthenticated address: stop them when you are done. They end with the
+public too, with a hard-to-guess but unauthenticated address: stop them when you are done. The
+[safety check](#safety-check) lists every one that is still running. They end with the
 command (Ctrl+C, `kill`, or closing the terminal); if the command was killed hard, `cloudify temp stop` stops what
 is left. They use a configuration of their own, never `~/.cloudflared/config.yml`, so they publish exactly the
 port you gave.
+
+## Safety check
+
+`safety-check.sh` (in the repository root) answers "what on this machine is reachable through Cloudflare
+right now?" and can stop it. It needs only bash and standard tools, not Cloudify, so it also works after
+Cloudify was removed or on a machine where someone else started tunnels. It runs on Linux and macOS, and
+on Windows inside WSL.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash
+```
+
+Without options it **only lists**:
+
+| Section | What it shows |
+| --- | --- |
+| Temporary tunnels | Every `cloudflared` quick tunnel: its public `trycloudflare.com` address (asked from cloudflared itself), the local service it forwards to, and what started it (`cloudify -p`, the dashboard) |
+| SSH sharing | Every `cloudify -ssh host`: its public address, and the programs that connected remotes are running |
+| Outgoing connections | `cloudify -ssh remote` sessions and other `cloudflared access` connections from this machine |
+| Persistent tunnels | Named tunnels, their Cloudflare connections, and what keeps them running (systemd service, launchd, cron, by hand, a Docker container) |
+| Cloudify dashboard | Running dashboards and their listening addresses. A dashboard reachable from the network, or one using plain HTTP, is flagged |
+| Starts automatically | Cloudify's auto-start entries (systemd user units, cron, launchd) and a system-wide cloudflared service |
+| Installed | The `cloudify` and `cloudflared` programs, what `~/.cloudflared` contains, and Docker containers |
+
+Tunnel tokens and credentials are never printed.
+
+| Option | What it does | Asks first |
+| --- | --- | --- |
+| `--kill` | Stops temporary tunnels, SSH sharing (all remotes are disconnected) and outgoing sessions | no |
+| `--kill-all` | Also stops persistent tunnels (through their service manager, so they don't restart until the next boot) and the dashboard | yes |
+| `--remove` | Stops everything, removes the auto-start entries, uninstalls Cloudify (pipx, virtualenv, a 1.x `pip --user` copy) and cloudflared (Homebrew, your package manager, or the binary) | yes |
+| `--remove --purge` | Also deletes `~/.cloudflared` (cert.pem, tunnel credentials, Cloudify's accounts and users) and `/etc/cloudflared` | you type `delete` |
+| `-y`, `--yes` | Skips the questions (for scripts). Without a terminal, `--kill-all` and `--remove` refuse to run unless it's given | |
+
+Good to know:
+
+* **Users:** only your own processes are stopped. Run it with `sudo` to stop other users' processes too.
+  Don't use `sudo` for `--remove`: it would remove root's installation. Without sudo, it asks for your
+  password only for system-wide parts such as `/usr/local/bin/cloudflared`.
+* **Docker:** processes inside Docker containers are listed but not stopped. Use
+  `docker compose -f docker/docker-compose.yml down` (and `docker volume rm cloudify-data` to delete its
+  data).
+* **Cloudflare account:** `--purge` deletes the local keys only. The tunnels and DNS records stay in your
+  Cloudflare account. Delete them first if you no longer need them (`cloudify tunnel delete NAME`, or
+  Cloudflare dashboard → Zero Trust → Networks → Tunnels).
+* **PATH lines:** the lines that `install.sh` added to `~/.profile`, `~/.bashrc` or `~/.zshrc` are left. They
+  only add `~/.local/bin` to `PATH`.
 
 ## SSH sharing
 

@@ -21,6 +21,7 @@ ports in your firewall or router.
 | Know where my data is, back it up or move it | [Files, data and backups](files-and-data.md) |
 | Fix a problem | [Troubleshooting](troubleshooting.md) |
 | Run it safely (dashboard exposure, users, secrets) | [Security](security.md) |
+| See what is reachable through Cloudflare, stop it, or remove everything | [Safety check](security.md#safety-check) |
 
 ## Supported platforms
 

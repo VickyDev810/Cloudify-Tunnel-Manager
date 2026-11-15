@@ -41,6 +41,11 @@ CASES = {
     "update-1.x-pipx-ubuntu-24.04": (
         "ubuntu:24.04", "apt-get update -qq && apt-get install -y -qq pipx procps >/dev/null "
                         "&& bash /src/tests/install/update.sh pipx"),
+    # safety-check.sh: stopping (bash 3.2 as on macOS, BusyBox ps) and removing everything (as a sudo user)
+    "safety-kill-bash-3.2": ("bash:3.2", "apk add --no-cache python3 curl >/dev/null && bash /src/tests/install/safety.sh kill"),
+    "safety-remove-ubuntu-24.04": (
+        "ubuntu:24.04", "apt-get update -qq && apt-get install -y -qq sudo cron curl procps iproute2 >/dev/null && "
+                        + AS_USER.replace("check.sh {mode}", "safety.sh remove")),
 }
 
 
@@ -68,5 +73,6 @@ def test_install_script(name):
         ["docker", "run", "--rm", "-v", f"{ROOT}:/src:ro", image, "sh", "-c", command.format(mode=mode)],
         capture_output=True, text=True, timeout=1200)
     output = result.stdout + result.stderr
-    marker = "UPDATE-CHECK-OK" if name.startswith("update-") else "INSTALL-CHECK-OK"
+    marker = ("UPDATE-CHECK-OK" if name.startswith("update-") else
+              "SAFETY-CHECK-OK" if name.startswith("safety-") else "INSTALL-CHECK-OK")
     assert result.returncode == 0 and marker in output, output[-4000:]
