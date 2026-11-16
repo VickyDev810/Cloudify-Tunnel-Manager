@@ -65,7 +65,10 @@ elif [ "$MODE" = remove ]; then
     sleep 3
     out="$(bash "$CHECK" 2>&1)"; echo "$out"
     expect list "$out" "crontab: @reboot $HOME/.local/bin/start-tunnel-web.sh"
-    expect list "$out" "listening on 127.0.0.1:18766"
+    # open to the network by default: listed as reachable, with the plain-HTTP warning and the --secure hint
+    expect list "$out" "listening on 0.0.0.0:18766 - reachable from the network"
+    expect list "$out" "plain HTTP: passwords and logins cross the network unencrypted"
+    expect list "$out" "restart it with --secure"
     expect list "$out" "cloudflared "
     out="$(bash "$CHECK" --remove < /dev/null 2>&1)"
     expect no-confirmation "$out" "run again with --yes"

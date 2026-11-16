@@ -6,22 +6,28 @@ to publish.
 
 ## The dashboard
 
-**Default: this machine only.** `cloudify serve` listens on `127.0.0.1:8765`.
+**Default: open to the network.** `cloudify serve` and the Docker image listen on port 8765 of every interface
+(`0.0.0.0`) and answer under any address: an IP address (a cloud server's public IP, for example), a domain or
+a quick tunnel. Unless you give it a certificate, that's plain HTTP. Anyone who can reach the port can open the
+login page, and passwords and login tokens cross the network unencrypted. `cloudify serve` warns about this when it
+starts. On AWS or Azure, the security group or network security group decides who can reach port 8765: allow only
+your own IP address if you can.
 
-**In Docker it's different.** The compose file uses host networking, and the container's dashboard listens on
-port 8765 of every interface of the server, over plain HTTP. Restrict it with `CLOUDIFY_SERVE_ARGS`
-([Docker → Securing the dashboard](docker.md#securing-the-dashboard)).
+**Secure mode** (`cloudify serve --secure`; Docker: `CLOUDIFY_SECURE=1`, see
+[Docker → Securing the dashboard](docker.md#securing-the-dashboard)):
+
+* it listens on `127.0.0.1` only, unless you give `--host`;
+* it answers only to known names (see *DNS rebinding* below);
+* it refuses plain HTTP on a network address unless you add `--insecure-http`.
 
 To use the dashboard from another device, choose one of these, from most to least secure:
 
 | Option | How |
 | --- | --- |
-| **SSH tunnel** (no changes needed) | `ssh -L 8765:localhost:8765 user@server`, then open `http://localhost:8765` on your computer |
-| **Cloudflare Access** | Add a route `dash.example.com → localhost:8765`, protect `dash.example.com` with an Access application (Zero Trust → Access → Applications, allow only your e-mail), and start the dashboard with `--allowed-host dash.example.com`. Traffic is HTTPS end to end through Cloudflare, and nobody reaches the login page without passing Access. |
-| **HTTPS on your network** | `cloudify serve --host 0.0.0.0 --ssl-certfile cert.pem --ssl-keyfile key.pem` (a certificate from your own CA, or e.g. `mkcert`) |
-| **Plain HTTP on a trusted network** | `cloudify serve --host 0.0.0.0 --insecure-http`. Passwords and login tokens cross the network unencrypted; anyone who can watch that network can take over the dashboard. Use only behind a TLS proxy or on a network you fully trust. |
-
-Without TLS or `--insecure-http`, Cloudify refuses to listen on a network address.
+| **SSH tunnel** | Run the dashboard with `--secure`. Then `ssh -L 8765:localhost:8765 user@server`, and open `http://localhost:8765` on your computer |
+| **Cloudflare Access** | Add a route `dash.example.com → localhost:8765` and protect `dash.example.com` with an Access application (Zero Trust → Access → Applications, allow only your e-mail). Run the dashboard with `--secure`: the names of your routes are known names. Traffic is HTTPS end to end through Cloudflare, and nobody reaches the login page without passing Access. |
+| **HTTPS on your network** | `cloudify serve --ssl-certfile cert.pem --ssl-keyfile key.pem`, with a certificate from your own CA or e.g. `mkcert`. Add `--secure --host 0.0.0.0` to accept only known names. |
+| **Plain HTTP** (the default) | `cloudify serve`. Passwords and login tokens cross the network unencrypted; anyone who can watch that network can take over the dashboard. Use it only behind a TLS proxy or on a network you fully trust. |
 
 **First run.** The first account (the administrator) can only be created with the one-time **setup code** that
 `cloudify serve` prints on its console while no account exists (`docker logs cloudify` in Docker). Someone who
@@ -38,9 +44,13 @@ created again later) and restarting the dashboard end them.
 
 **Built-in protections:**
 
-* *DNS rebinding:* the dashboard only answers requests addressed to an IP address, `localhost`, this machine's
-  name, the hostnames of your tunnels' routes, and names given with `--allowed-host`. A web page you visit can't
-  point its own domain at your dashboard and drive it through your browser.
+* *DNS rebinding (secure mode):* the dashboard only answers requests addressed to an IP address, `localhost`, this
+  machine's name, the hostnames of your tunnels' routes, and names given with `--allowed-host`. A web page you visit can't
+  point its own domain at your dashboard and drive it through your browser. `--allowed-host` also takes patterns,
+  such as `*.trycloudflare.com` for every quick tunnel. Use a pattern only for a domain whose DNS you, or a
+  provider you trust, control. Patterns broader than `*.example.com`, like `*.com`, are refused. A pattern only
+  lets the dashboard be opened under those names: another site under them still can't send it changes. By
+  default (open mode) every name is accepted.
 * *Cross-site requests:* a request that changes something (sign-in, account creation, every action) is refused
   when the browser says it comes from another site. Together with login tokens that are never sent automatically
   (no cookies), a web page you visit can't act on the dashboard.
@@ -166,12 +176,11 @@ access code before using it, so a malicious code can't make `ssh` run commands o
 
 The container runs as root inside the container and holds all secrets in the `/root/.cloudflared` volume: protect
 the volume and its backups like `~/.cloudflared`. The compose file builds the image from your checkout (it never
-pulls a third-party image apart from the official `python` base image). It runs with host networking, so the
-dashboard listens on port 8765 of every interface of the server over plain HTTP unless you set
-`CLOUDIFY_SERVE_ARGS`:
+pulls a third-party image apart from the official `python` base image). It runs with host networking, so by
+default the dashboard listens on port 8765 of every interface of the server, over plain HTTP, under any address:
 
-* `--host 127.0.0.1` keeps it on this machine only;
-* `--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem` gives you HTTPS.
+* `CLOUDIFY_SECURE=1` keeps it on this machine only, and to known names;
+* `CLOUDIFY_SERVE_ARGS: "--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem"` gives you HTTPS.
 
 Details are in [Docker](docker.md#securing-the-dashboard). The first account still needs the setup code from
 `docker logs cloudify`. The build checks the downloaded cloudflared against the SHA-256 published in its release
@@ -193,13 +202,15 @@ reviewed for bugs. The fixes are listed in the release notes; the main ones are 
 15 were confirmed (1 high, 8 medium, 6 low). 13 could neither be proven nor ruled out without a real
 deployment, such as a specific browser, a second user account on the machine, or Cloudflare's network. 3 were
 real defects without a security impact. **All 31 are fixed in this release**, 29 of them with a regression test
-(the other two are a compose setting and the installer's build folder). The audit looked at a fixed copy of the code before these fixes; the fixes were tested, not audited again.
+(the other two are a compose setting and the installer's build folder). Since 16 November 2026, two of the fixes
+apply only in secure mode, at the owner's request: the dashboard is open to the network by default again (see
+the table). The audit looked at a fixed copy of the code before these fixes; the fixes were tested, not audited again.
 
 | Severity | What could happen | What changed |
 | --- | --- | --- |
 | High | A malicious SSH access code could make `cloudify -ssh remote` run commands on the connecting computer | The remote checks every field of the access code (host name, host key, key format, port, expiry) and passes the host to `ssh` safely |
-| Medium | On a new pip/pipx install, anyone on the network could create the first (administrator) account, because the dashboard listened on all interfaces | `127.0.0.1` by default; the first account needs the one-time setup code |
-| Medium | Passwords and login tokens crossed the network as plain HTTP | A network address needs TLS or an explicit `--insecure-http` |
+| Medium | On a new pip/pipx install, anyone on the network could create the first (administrator) account, because the dashboard listened on all interfaces | The first account needs the one-time setup code. The dashboard listened on `127.0.0.1` by default until 16 November 2026. Now it's open to the network by default again, and `--secure` keeps it on this machine |
+| Medium | Passwords and login tokens crossed the network as plain HTTP | In secure mode (`--secure`), a network address needs TLS or an explicit `--insecure-http`. By default, plain HTTP on the network is allowed again since 16 November 2026, with a warning when the dashboard starts |
 | Medium | Another user of the machine could plant a `users.json` in the folder the dashboard was started from | A 1.x `users.json` is only adopted if it is yours, not writable by others, and holds real password hashes |
 | Medium | Someone signing in while you changed the password or deleted the account kept a working session | Changing the password or deleting the user ends every other session, including sign-ins still in progress |
 | Medium | `cloudify -ssh remote --password` could run Python files from the current folder | Its restart ignores the current folder |

@@ -357,14 +357,20 @@ def _is_loopback(host: str) -> bool:
 
 @cli.command()
 @click.option('--serve-port', default=8765, show_default=True, help='Port for the web UI and API')
-@click.option('--host', '-h', default='127.0.0.1', show_default=True,
-              help='Address to listen on; 0.0.0.0 = every network interface (needs TLS or --insecure-http)')
+@click.option('--host', '-h', default=None,
+              help='Address to listen on  [default: 0.0.0.0, every network interface; with --secure: 127.0.0.1, '
+                   'this machine only]')
+@click.option('--secure', is_flag=True,
+              help='Lock the dashboard down: this machine only (127.0.0.1) unless --host is given, only known host '
+                   'names (IP addresses, localhost, this machine, tunnel routes, --allowed-host), and no plain HTTP '
+                   'on a network address. Same as CLOUDIFY_SECURE=1')
 @click.option('--ssl-certfile', type=click.Path(exists=True, dir_okay=False), help='TLS certificate (PEM): serve HTTPS')
 @click.option('--ssl-keyfile', type=click.Path(exists=True, dir_okay=False), help='TLS private key (PEM)')
 @click.option('--insecure-http', is_flag=True,
-              help='Allow plain HTTP on a network address (a TLS proxy in front, or a trusted network)')
+              help='With --secure: allow plain HTTP on a network address (a TLS proxy in front, or a trusted network)')
 @click.option('--allowed-host', multiple=True,
-              help='Extra host name the dashboard may be opened under (repeatable), e.g. dash.example.com')
+              help='With --secure: extra host name the dashboard may be opened under (repeatable), e.g. '
+                   'dash.example.com, or a pattern: "*.trycloudflare.com" allows every quick tunnel')
 @click.option('--api-docs', is_flag=True, help='Serve the interactive API documentation at /api/docs')
 @click.option('--api-host', default=None, hidden=True)
 @click.option('--windows', is_flag=True, hidden=True)          # kept for old scripts; no longer needed
@@ -372,27 +378,33 @@ def _is_loopback(host: str) -> bool:
 @click.option('--frontend-port', '-f', default=None, hidden=True)
 @click.option('--frontend-host', default=None, hidden=True)
 @click.option('--skip-install', is_flag=True, hidden=True)
-def serve(serve_port, host, ssl_certfile, ssl_keyfile, insecure_http, allowed_host, api_docs, api_host, windows,
-          next_frontend, frontend_port, frontend_host, skip_install):
-    """Start the web UI (http://localhost:8765)"""
+def serve(serve_port, host, secure, ssl_certfile, ssl_keyfile, insecure_http, allowed_host, api_docs, api_host,
+          windows, next_frontend, frontend_port, frontend_host, skip_install):
+    """Start the web UI (http://localhost:8765, and this machine's IP addresses unless --secure)"""
     import uvicorn
-    from cloudify.server.app import app, configure, set_server
+    from cloudify.server.app import allowed_host_error, app, configure, set_server
 
     if next_frontend:
         click.echo("Note: the separate Next.js frontend was replaced by the built-in UI.")
-    host = api_host or host
+    secure = secure or os.environ.get("CLOUDIFY_SECURE", "").strip().lower() in ("1", "true", "yes", "on")
+    host = api_host or host or ("127.0.0.1" if secure else "0.0.0.0")
     if bool(ssl_certfile) != bool(ssl_keyfile):
         raise click.UsageError("--ssl-certfile and --ssl-keyfile must be given together")
     tls = bool(ssl_certfile)
     insecure_http = insecure_http or os.environ.get("CLOUDIFY_INSECURE_HTTP") == "1"
-    if not _is_loopback(host) and not tls and not insecure_http:
+    if secure and not _is_loopback(host) and not tls and not insecure_http:
         raise click.ClickException(
-            f"Refusing to serve plain HTTP on {host}: passwords, login tokens, API tokens and replica files would "
-            "cross the network unencrypted. Use --ssl-certfile/--ssl-keyfile, or --insecure-http if a TLS proxy "
-            "is in front (or you accept that on a trusted network), or keep the default 127.0.0.1 and use an "
-            "SSH tunnel: ssh -L 8765:localhost:8765 <this machine>")
+            f"Refusing to serve plain HTTP on {host} in secure mode: passwords, login tokens, API tokens and "
+            "replica files would cross the network unencrypted. Use --ssl-certfile/--ssl-keyfile, or "
+            "--insecure-http if a TLS proxy is in front, or leave out --host (this machine only) and use an SSH "
+            "tunnel: ssh -L 8765:localhost:8765 <this machine>")
     extra = [h for h in os.environ.get("CLOUDIFY_ALLOWED_HOSTS", "").split(",") if h.strip()]
-    configure(allowed_hosts=list(allowed_host) + extra,
+    allowed = [h.strip() for h in list(allowed_host) + extra if h.strip()]
+    for name in allowed:
+        error = allowed_host_error(name)
+        if error:
+            raise click.UsageError(error)
+    configure(allowed_hosts=allowed, check_host=secure,  # open mode: any address or name may be used
               api_docs=api_docs or os.environ.get("CLOUDIFY_API_DOCS") == "1")
     from cloudify.server import auth
     try:
@@ -403,11 +415,20 @@ def serve(serve_port, host, ssl_certfile, ssl_keyfile, insecure_http, allowed_ho
     if first_run:
         click.echo(f"🔑 Setup code: {auth.setup_code()}  (the dashboard asks for it to create the first account)")
     scheme = "https" if tls else "http"
-    where = "localhost" if _is_loopback(host) or host in ("0.0.0.0", "::") else host
+    everywhere = host in ("0.0.0.0", "::")
+    where = "localhost" if _is_loopback(host) or everywhere else host
     click.echo(f"🚀 Cloudify {__version__} running at {scheme}://{where}:{serve_port}"
-               + ("  (listening on every network interface)" if host in ("0.0.0.0", "::") else ""))
-    if not _is_loopback(host) and not tls:
-        click.echo("⚠️  Plain HTTP on the network: use it only behind a TLS proxy or on a network you trust.")
+               + (f"  (and on this machine's IP addresses, port {serve_port})" if everywhere else ""))
+    if secure:
+        click.echo("🔒 Secure mode: known host names only" + (", this machine only" if _is_loopback(host) else ""))
+        if allowed:
+            click.echo(f"🌐 Also opens as: {', '.join(sorted(set(allowed)))}")
+        if not _is_loopback(host) and not tls:
+            click.echo("⚠️  Plain HTTP on the network: use it only behind a TLS proxy or on a network you trust.")
+    elif not _is_loopback(host):
+        click.echo(f"⚠️  Open to the network: anyone who can reach port {serve_port} can open the login page, under any "
+                   "address" + (", and passwords cross the network unencrypted (plain HTTP)" if not tls else "")
+                   + ". Lock it down with --secure (Docker: CLOUDIFY_SECURE=1).")
     server = uvicorn.Server(uvicorn.Config(app, host=host, port=serve_port, log_level="warning",
                                            ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile,
                                            limit_concurrency=64))  # busy -> 503 instead of piling up work

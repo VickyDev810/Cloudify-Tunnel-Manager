@@ -4,10 +4,10 @@ The dashboard is a web interface built into Cloudify: no Node.js, no separate fr
 Linux, macOS, Windows and Docker. Everything it does is also available on the [command line](cli-reference.md).
 
 ```bash
-cloudify serve                                   # http://localhost:8765, reachable from this machine only
+cloudify serve                                   # http://localhost:8765 and this machine's IP addresses, any name
 cloudify serve --serve-port 9000                 # another port
-cloudify serve --host 0.0.0.0 --ssl-certfile cert.pem --ssl-keyfile key.pem   # HTTPS for other devices
-cloudify serve --host 0.0.0.0 --insecure-http    # plain HTTP on the network (TLS proxy in front, or trusted LAN)
+cloudify serve --ssl-certfile cert.pem --ssl-keyfile key.pem   # HTTPS
+cloudify serve --secure                          # this machine only, known names only (see Security)
 ```
 
 To keep it running permanently, see *Run the dashboard as a service* for
@@ -98,11 +98,14 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8765/tunnels
 
 ## When something doesn't work
 
-* *Page doesn't load from another device*: by default the dashboard listens on this machine only. Use an SSH
-  tunnel, or start it with `--host 0.0.0.0` plus HTTPS (or `--insecure-http`) and open the firewall
-  (`sudo ufw allow 8765/tcp`); in Docker change the `ports:` mapping ([Security](security.md)).
-* *"This dashboard can't be opened as ..."*: you used a host name it doesn't know (protection against DNS
-  rebinding). Use the IP address or `localhost`, or add the name with `--allowed-host NAME`.
+* *Page doesn't load from another device*: the dashboard listens on every interface unless it runs with
+  `--secure`. Check the firewall (`sudo ufw allow 8765/tcp`). On AWS or Azure, allow TCP port 8765 in the security
+  group or network security group. With `--secure`, use an SSH tunnel ([Security](security.md)).
+* *"This dashboard runs in secure mode and can't be opened as ..."*: in secure mode it only answers to known names
+  (protection against DNS rebinding). Use the IP address or `localhost`, or add the name with
+  `--allowed-host NAME`. For quick tunnels, whose name changes every time, use
+  `--allowed-host '*.trycloudflare.com'` or the `CLOUDIFY_ALLOWED_HOSTS` environment variable. Or start it
+  without `--secure`.
 * *"Address already in use"*: another program (or another dashboard) uses the port; pick another with
   `--serve-port`.
 * More in [Troubleshooting](troubleshooting.md).

@@ -500,8 +500,120 @@ def test_security_headers_docs_and_host_check(systemd_env, monkeypatch):
 
 
 def test_serve_refuses_plain_http_on_the_network(env):
+    """Only in secure mode: by default the dashboard is open to the network (see test_open_by_default...)."""
+    rc, out = env.cli("serve", "--secure", "--host", "0.0.0.0", "--serve-port", "18799")
+    assert rc != 0 and "Refusing to serve plain HTTP" in out, out
+    env.vars["CLOUDIFY_SECURE"] = "1"
     rc, out = env.cli("serve", "--host", "0.0.0.0", "--serve-port", "18799")
     assert rc != 0 and "Refusing to serve plain HTTP" in out, out
+
+
+def _non_loopback_address():
+    """This machine's address on its default route, or None (no packet is sent)."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        try:
+            s.connect(("192.0.2.1", 9))
+            address = s.getsockname()[0]
+        except OSError:
+            return None
+    return None if address.startswith("127.") else address
+
+
+def test_open_by_default_and_secure_on_request(systemd_env, tmp_path):
+    """`cloudify serve` answers on every interface under any name (a server's public IP, a domain, a quick
+    tunnel). --secure, or CLOUDIFY_SECURE=1, keeps it on this machine and to known names."""
+    import urllib.error
+    import urllib.request
+    env = systemd_env
+
+    def get(port, host, address="127.0.0.1"):
+        request = urllib.request.Request(f"http://{address}:{port}/healthz", headers={"Host": host})
+        try:
+            with urllib.request.urlopen(request, timeout=5) as r:
+                return r.status, ""
+        except urllib.error.HTTPError as e:
+            return e.code, e.read().decode()
+        except OSError as e:
+            return None, str(e)
+
+    def serve(*args, **extra_env):
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+        log = tmp_path / f"serve-{port}.log"
+        proc = subprocess.Popen([sys.executable, "-m", "cloudify", "serve", "--serve-port", str(port), *args],
+                                env=dict(env.vars, **extra_env), cwd=str(env.home),
+                                stdout=log.open("w"), stderr=subprocess.STDOUT)
+        assert wait_for(lambda: get(port, "localhost")[0] == 200, timeout=20), log.read_text()
+        return proc, port, log
+
+    lan = _non_loopback_address()
+    proc, port, log = serve()
+    try:
+        for name in ("closest-approaches-durham-acts.trycloudflare.com", "dash.example.com", "203.0.113.7:8765"):
+            assert get(port, name)[0] == 200, name
+        if lan:
+            assert get(port, lan, address=lan)[0] == 200  # every interface
+        out = log.read_text()
+        assert "Open to the network" in out and "--secure" in out, out
+    finally:
+        proc.terminate()
+        proc.wait(timeout=10)
+
+    for args, extra in ((("--secure",), {}), ((), {"CLOUDIFY_SECURE": "1"})):
+        proc, port, log = serve(*args, **extra)
+        try:
+            status, body = get(port, "closest-approaches-durham-acts.trycloudflare.com")
+            assert status == 400 and "secure mode" in body, (status, body)
+            assert get(port, "127.0.0.1:%d" % port)[0] == 200
+            if lan:
+                assert get(port, lan, address=lan)[0] is None  # this machine only: nothing listens there
+            assert "Secure mode" in log.read_text()
+        finally:
+            proc.terminate()
+            proc.wait(timeout=10)
+    proc, port, log = serve("--secure", CLOUDIFY_ALLOWED_HOSTS="*.trycloudflare.com")
+    try:
+        assert get(port, "closest-approaches-durham-acts.trycloudflare.com")[0] == 200
+        assert get(port, "dash.example.com")[0] == 400
+    finally:
+        proc.terminate()
+        proc.wait(timeout=10)
+
+
+def test_allowed_host_patterns(systemd_env, monkeypatch):
+    """`--allowed-host '*.trycloudflare.com'` opens the dashboard under every quick tunnel's name, and only there."""
+    from fastapi.testclient import TestClient
+    monkeypatch.setenv("HOME", str(systemd_env.home))
+    from cloudify.server import app as app_mod
+    client = TestClient(app_mod.app)
+    name = "closest-approaches-durham-acts.trycloudflare.com"
+    try:
+        app_mod.configure(allowed_hosts=["*.trycloudflare.com"])
+        for host, ok in ((name, True), ("a.b.trycloudflare.com:443", True), ("trycloudflare.com", False),
+                         ("x.trycloudflare.com.evil.com", False), ("eviltrycloudflare.com", False), ("evil.com", False)):
+            status = client.get("/healthz", headers={"Host": host}).status_code
+            assert (status == 200) == ok, (host, status)
+        # the dashboard's own page may send changes; a page on another quick tunnel may not
+        assert app_mod.origin_allowed(f"https://{name}", name)
+        assert not app_mod.origin_allowed("https://attacker.trycloudflare.com", name)
+        r = client.post("/auth/login", data={"username": "x", "password": "y"},
+                        headers={"Host": name, "Origin": "https://attacker.trycloudflare.com"})
+        assert r.status_code == 403, r.text
+    finally:
+        app_mod.configure(check_host=False)
+    for bad in ("*", "*.com", "a.*.example.com", "*example.com", "**.example.com"):
+        assert app_mod.allowed_host_error(bad), bad
+    for good in ("*.trycloudflare.com", "dash.example.com", "*.Example.COM."):
+        assert app_mod.allowed_host_error(good) is None, good
+
+
+def test_serve_refuses_too_broad_host_patterns(env):
+    rc, out = env.cli("serve", "--allowed-host", "*.com", "--serve-port", "18798")
+    assert rc != 0 and "isn't a valid host pattern" in out, out
+    env.vars["CLOUDIFY_ALLOWED_HOSTS"] = "dash.example.com,*"
+    rc, out = env.cli("serve", "--serve-port", "18798")
+    assert rc != 0 and "isn't a valid host pattern" in out, out
 
 
 def test_ssh_server_disables_gss_auth():

@@ -463,7 +463,11 @@ list_dashboard() {
         done
         if $open; then
             alert "PID ${P_PID[$idx]} ($(owner_text "$idx"), $(started_text "$idx")): listening on ${addrs% } - reachable from the network"
-            case " ${P_ARGS[$idx]} " in *" --insecure-http "*) detail "plain HTTP: passwords and logins cross the network unencrypted" ;; esac
+            case " ${P_ARGS[$idx]} " in
+                *" --ssl-certfile"*) ;;
+                *) detail "plain HTTP: passwords and logins cross the network unencrypted" ;;
+            esac
+            detail "to keep it on this machine only, restart it with --secure (Docker: CLOUDIFY_SECURE=1)"
         else
             if [ -n "$addrs" ]; then where="listening on ${addrs% }"; else where="listening address not visible to this user"; fi
             item "PID ${P_PID[$idx]} ($(owner_text "$idx"), $(started_text "$idx")): $where"

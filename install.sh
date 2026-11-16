@@ -718,7 +718,8 @@ fi
 cat <<EOF
 
   cloudify setup --domain example.com   connect your Cloudflare domain
-  cloudify serve                        dashboard at http://localhost:8765
+  cloudify serve                        dashboard on port 8765, open to the network
+  cloudify serve --secure               dashboard on this machine only (http://localhost:8765)
   cloudify -p 3000                      temporary public URL for localhost:3000
   cloudify -ssh host                    share this machine over SSH
 

@@ -51,7 +51,7 @@ After updating:
 | `users.json` in the folder you started `cloudify serve` from | `~/.cloudflared/cloudify/users.json` (moved by the installer, or on first start) |
 | One Cloudflare login (`~/.cloudflared/cert.pem`) | Several domains and accounts; the old certificate becomes the first connection (name it with `cloudify account domain default example.com`) |
 | `cloudify serve --next-frontend`, `--frontend-port`, `--api-host` | `cloudify serve [--serve-port 8765] [--host ADDR]` |
-| Dashboard on all interfaces (`0.0.0.0`) over plain HTTP by default | `127.0.0.1` by default; the network needs HTTPS or `--insecure-http` ([Security](security.md)) |
+| Dashboard on all interfaces (`0.0.0.0`) over plain HTTP by default | The same by default. `--secure` keeps it on this machine and to known names ([Security](security.md)) |
 | Windows-specific `serve --windows` | Same commands on every platform |
 
 Node.js is no longer needed; you can remove it if nothing else uses it.

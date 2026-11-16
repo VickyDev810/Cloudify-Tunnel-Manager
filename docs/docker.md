@@ -29,7 +29,7 @@ What the compose file sets up:
 | `restart: unless-stopped` | The container, and with it every tunnel with auto-start, comes back after a crash or a reboot of the server (unless you stopped it yourself). |
 | volume `cloudify-data` → `/root/.cloudflared` | Cloudflare logins, tunnel credentials and configs, Cloudify users and connections survive re-creating or upgrading the container. |
 | `network_mode: host` | The container uses this machine's network. In a route, `localhost` is this machine, so services on the host and the published ports of all other containers are reachable as `localhost:PORT` ([routing](#routing-to-your-services)). |
-| dashboard on port 8765 | It listens on every interface of this machine, over plain HTTP (see *Securing the dashboard*). |
+| dashboard on port 8765 | It listens on every interface of this machine, over plain HTTP, under any address. `CLOUDIFY_SECURE=1` locks it down (see *Securing the dashboard*). |
 
 Make sure Docker itself starts at boot: `sudo systemctl enable docker` (Docker Desktop: *Start Docker Desktop
 when you sign in*).
@@ -110,6 +110,10 @@ With bridge networking, `localhost` in a route is the Cloudify container itself:
 * for a service on the Docker host, use `host.docker.internal`;
 * for another container, use its name and put it on the same network (`networks: [cloudify]`, or
   `docker network connect cloudify api`).
+
+The published port decides who can reach the dashboard: `127.0.0.1:8765:8765` above means this machine only.
+Secure mode (`CLOUDIFY_SECURE=1`) makes it listen on the container's own `localhost`. The published port then
+can't reach it at all, only a tunnel route in the container, as in the Cloudflare Access setup below.
 
 ## The command line inside the container
 
@@ -197,13 +201,25 @@ Use `docker volume ls` to see the volume's exact name (`cloudify_cloudify-data` 
 
 ## Securing the dashboard
 
-With host networking, the dashboard listens on port 8765 of every interface of this machine, over plain HTTP.
-Anyone on your network can open the login page, and passwords and login tokens cross the network unencrypted.
-Creating the first account needs the setup code from `docker logs cloudify`, so nobody else can claim a new
-installation. To restrict or encrypt access, set `CLOUDIFY_SERVE_ARGS` in the compose file (`environment:`):
+By default the dashboard is open. It listens on port 8765 of every interface of this machine, over plain HTTP,
+and answers under any address: the server's public or private IP, a domain, or a quick tunnel. On AWS or Azure,
+allow TCP port 8765 in the security group or network security group to reach it by public IP. Anyone who can
+reach the port can open the login page, and passwords and login tokens cross the network unencrypted. Creating
+the first account needs the setup code from `docker logs cloudify`, so nobody else can claim a new installation.
 
-* **This machine only:** `CLOUDIFY_SERVE_ARGS: "--host 127.0.0.1"`. From your laptop, use an SSH tunnel:
-  `ssh -L 8765:localhost:8765 user@server`, then open `http://localhost:8765`.
+To lock it down or encrypt it:
+
+* **Secure mode:** the dashboard listens on this machine only (`127.0.0.1`) and answers only to known names.
+  Put the setting in `docker/.env`, next to the compose file (never committed, so `git pull` keeps working),
+  and recreate the container:
+
+  ```bash
+  echo 'CLOUDIFY_SECURE=1' >> docker/.env
+  docker compose -f docker/docker-compose.yml up -d
+  ```
+
+  Or change `CLOUDIFY_SECURE: ${CLOUDIFY_SECURE:-0}` to `CLOUDIFY_SECURE: "1"` in the compose file. From your
+  laptop, use an SSH tunnel: `ssh -L 8765:localhost:8765 user@server`, then open `http://localhost:8765`.
 * **HTTPS:** mount a certificate and a key:
 
   ```yaml
@@ -217,10 +233,28 @@ installation. To restrict or encrypt access, set `CLOUDIFY_SERVE_ARGS` in the co
 * **Cloudflare Access:**
   1. On a tunnel, add a route `dash.example.com → localhost:8765`.
   2. Protect that hostname with a Cloudflare Access policy (Zero Trust → Access → Applications).
-  3. Set `CLOUDIFY_SERVE_ARGS: "--host 127.0.0.1 --allowed-host dash.example.com"`.
+  3. Turn on secure mode. The names of your routes are known names, so `dash.example.com` works.
 
   The tunnel reaches the dashboard on `localhost`; nobody on your network can.
-* **A firewall rule** that allows port 8765 only from the machines that need it.
+* **A firewall rule** that allows port 8765 only from the machines that need it. On AWS or Azure, allow only
+  your own IP address in the security group.
+
+### Opening the dashboard through a quick tunnel
+
+A quick tunnel, for example `docker exec -it cloudify cloudify -p 8765`, gives the dashboard a public
+`*.trycloudflare.com` address. By default that just works.
+
+In secure mode the dashboard refuses names it doesn't know (*This dashboard runs in secure mode and can't be
+opened as ...*), and a quick tunnel gets a new random name every time it starts. To allow every quick tunnel,
+add this to `docker/.env` and recreate the container:
+
+```bash
+echo 'CLOUDIFY_ALLOWED_HOSTS=*.trycloudflare.com' >> docker/.env
+docker compose -f docker/docker-compose.yml up -d
+```
+
+Anyone who has a quick tunnel's address can open the login page, so stop the quick tunnel when you're done. For
+lasting access, a route on your own domain with Cloudflare Access (above) is safer.
 
 See [Security](security.md) for more.
 

@@ -23,7 +23,7 @@ cloudify [--version] [-p PORT] [-ssh host|remote]
 | --- | --- |
 | `cloudify setup --domain example.com` | Connect a Cloudflare domain: prints an authorization link, waits until you approve it. |
 | `cloudify quickstart [NAME]` | Interactive wizard: tunnel name, auto-start, first route. |
-| `cloudify serve [--serve-port 8765] [--host ADDR]` | Start the dashboard and API on `127.0.0.1` (this machine only). `--host 0.0.0.0` listens on every network interface and then needs TLS (`--ssl-certfile`/`--ssl-keyfile`) or an explicit `--insecure-http`. `--allowed-host NAME` adds a host name it may be opened under (e.g. a tunnel hostname); `--api-docs` enables the interactive API docs at `/api/docs`. While no dashboard account exists it prints the one-time setup code needed to create the first one. See [Security](security.md). |
+| `cloudify serve [--serve-port 8765] [--host ADDR] [--secure]` | Start the dashboard and API. By default it listens on every network interface (`0.0.0.0`) and answers under any address: an IP address (e.g. a cloud server's public IP), a domain or a quick tunnel. That's plain HTTP unless you give `--ssl-certfile`/`--ssl-keyfile`. `--secure` locks it down. It listens on `127.0.0.1` unless `--host` is given, and answers only to known names: IP addresses, `localhost`, this machine, tunnel routes, and `--allowed-host NAME` or a pattern such as `--allowed-host '*.trycloudflare.com'`. A network `--host` then needs TLS or `--insecure-http`. `--api-docs` enables the interactive API docs at `/api/docs`. While no dashboard account exists it prints the one-time setup code needed to create the first one. See [Security](security.md). |
 
 ## `cloudify tunnel`
 
@@ -111,10 +111,11 @@ Details and the security model: [SSH sharing](ssh.md).
 | --- | --- | --- |
 | `CLOUDIFY_SSH_PASSWORD` | `ssh remote` | Password for scripts (people should type it). |
 | `CLOUDIFY_SETUP_CODE` | `serve` | Use this first-run setup code instead of a random one (scripted installs; use a long random value). |
-| `CLOUDIFY_ALLOWED_HOSTS` | `serve` | Extra host names the dashboard may be opened under, comma-separated (same as `--allowed-host`). |
-| `CLOUDIFY_INSECURE_HTTP=1` | `serve` | Same as `--insecure-http`. |
+| `CLOUDIFY_SECURE=1` | `serve` | Same as `--secure` (Docker: in `docker/.env` or the compose file). |
+| `CLOUDIFY_ALLOWED_HOSTS` | `serve` | Secure mode: extra host names the dashboard may be opened under, comma-separated (same as `--allowed-host`). `*.trycloudflare.com` allows every quick tunnel. |
+| `CLOUDIFY_INSECURE_HTTP=1` | `serve` | Same as `--insecure-http` (secure mode). |
 | `CLOUDIFY_API_DOCS=1` | `serve` | Same as `--api-docs`. |
-| `CLOUDIFY_SERVE_ARGS` | Docker image | Options for `cloudify serve` in the container (default `--insecure-http`; see [Docker](docker.md#securing-the-dashboard)). |
+| `CLOUDIFY_SERVE_ARGS` | Docker image | Extra options for `cloudify serve` in the container, e.g. HTTPS ([Docker](docker.md#securing-the-dashboard)). |
 | `HOME` | everything | Data lives in `$HOME/.cloudflared` ([Files and data](files-and-data.md)). |
 
 ## Exit codes

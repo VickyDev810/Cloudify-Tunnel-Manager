@@ -25,8 +25,8 @@ auto-start come back after a server reboot (make sure Docker itself starts at bo
 
 The container uses **host networking** (`network_mode: host`): in a route, `localhost` is the server, so
 services on the server and the published ports of your other containers are reachable as `localhost:PORT`.
-The dashboard listens on port 8765 of every interface over plain HTTP; to restrict it see
-[securing the dashboard](../docs/docker.md#securing-the-dashboard).
+The dashboard listens on port 8765 of every interface over plain HTTP, under any address (e.g. the server's
+public IP). `CLOUDIFY_SECURE=1` locks it down: see [securing the dashboard](../docs/docker.md#securing-the-dashboard).
 
 ## Run with `docker run`
 

@@ -78,8 +78,7 @@ cat > ~/Library/LaunchAgents/com.cloudify.dashboard.plist <<'EOF'
   <array>
     <string>/Users/YOU/.local/bin/cloudify</string>
     <string>serve</string>
-    <string>--host</string>
-    <string>127.0.0.1</string>
+    <string>--secure</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -101,8 +100,8 @@ launchctl load -w ~/Library/LaunchAgents/com.cloudify.dashboard.plist
 ```
 
 Open `http://localhost:8765`. Stop it with `launchctl unload -w ~/Library/LaunchAgents/com.cloudify.dashboard.plist`.
-Read [Security](security.md) before listening on all interfaces (`--host 0.0.0.0`, which needs HTTPS or
-`--insecure-http`).
+`--secure` keeps the dashboard on this Mac. Without it, the dashboard is open to your network: it listens on every
+interface, over plain HTTP unless you give it a certificate. Read [Security](security.md) first.
 
 ## Notes
 

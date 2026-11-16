@@ -21,12 +21,19 @@ services:
     # reachable as localhost:PORT, without joining networks. Linux; on Docker Desktop (macOS, Windows)
     # turn on host networking in its settings first.
     network_mode: host
-    # The dashboard listens on port 8765 of this machine, on every interface, over plain HTTP: anyone on
-    # your network can open it, and passwords cross the network unencrypted (see docs/security.md).
-    # To keep it on this machine only, or to use HTTPS, uncomment one of these:
-    # environment:
-    #   CLOUDIFY_SERVE_ARGS: "--host 127.0.0.1"
-    #   CLOUDIFY_SERVE_ARGS: "--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem"
+    environment:
+      # By default the dashboard listens on port 8765 of this machine, on every interface, over plain HTTP,
+      # under any address: the server's public or private IP, a domain, a quick tunnel. Anyone who can
+      # reach the port can open the login page, and passwords cross the network unencrypted
+      # (docs/security.md).
+      # Secure mode locks it down: this machine only (127.0.0.1), known names only. Turn it on with
+      # CLOUDIFY_SECURE=1 in docker/.env (next to this file, never committed), or change 0 to 1 here.
+      CLOUDIFY_SECURE: ${CLOUDIFY_SECURE:-0}
+      # Secure mode only: extra names the dashboard may be opened under, comma-separated, e.g.
+      # dash.example.com, or *.trycloudflare.com for every quick tunnel (docs/docker.md).
+      CLOUDIFY_ALLOWED_HOSTS: ${CLOUDIFY_ALLOWED_HOSTS:-}
+      # HTTPS: mount a certificate (volumes below) and uncomment:
+      # CLOUDIFY_SERVE_ARGS: "--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem"
     volumes:
       # Cloudflare login, tunnel credentials/configs, Cloudify accounts
       - cloudify-data:/root/.cloudflared

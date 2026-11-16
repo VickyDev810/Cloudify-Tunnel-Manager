@@ -53,10 +53,10 @@ Logs: `~/.cloudflared/logs/<name>.log` (tunnels started directly), `journalctl -
 
 | Symptom | Cause and fix |
 | --- | --- |
-| Can't open it from another computer | By default it only listens on its own machine (`127.0.0.1`). Use an SSH tunnel (`ssh -L 8765:localhost:8765 user@server`), or start it with `--host 0.0.0.0` and HTTPS (or `--insecure-http`) and open the firewall (`sudo ufw allow 8765/tcp`); in Docker change the `ports:` mapping. See [Security](security.md). |
+| Can't open it from another computer | It listens on every interface unless started with `--secure`. Open the firewall (`sudo ufw allow 8765/tcp`). On AWS or Azure, allow TCP port 8765 in the security group or network security group. With `--secure` it listens on its own machine only: use an SSH tunnel (`ssh -L 8765:localhost:8765 user@server`). See [Security](security.md). |
 | The setup page asks for a **setup code** | `cloudify serve` prints it when it starts while no account exists (`🔑 Setup code: ...`). Look in its terminal, `journalctl --user -u cloudify-dashboard` (service) or `docker logs cloudify`. Restarting the dashboard prints it again. |
-| *Refusing to serve plain HTTP on 0.0.0.0* | Add `--ssl-certfile`/`--ssl-keyfile`, or `--insecure-http` if a TLS proxy is in front or the network is trusted. |
-| *This dashboard can't be opened as ...* | DNS-rebinding protection: open it by IP address or `localhost`, or allow the name with `--allowed-host NAME`. |
+| *Refusing to serve plain HTTP on ... in secure mode* | `--secure` with a network `--host`: add `--ssl-certfile`/`--ssl-keyfile`, or `--insecure-http` if a TLS proxy is in front or the network is trusted. |
+| *This dashboard runs in secure mode and can't be opened as ...* | Secure mode answers only to known names (DNS-rebinding protection). Open it by IP address or `localhost`, allow the name with `--allowed-host NAME`, or start it without `--secure`. For quick tunnels, whose name changes every time: `--allowed-host '*.trycloudflare.com'`, or `CLOUDIFY_ALLOWED_HOSTS=*.trycloudflare.com` (in Docker, in `docker/.env`: [Docker](docker.md#opening-the-dashboard-through-a-quick-tunnel)). |
 | *Address already in use* | Another program uses port 8765: `cloudify serve --serve-port 9000`. |
 | Signed out unexpectedly | Sessions end after 7 days, when the password is changed elsewhere, and when the dashboard restarts. |
 | Forgot the password | See [Files and data → Resetting things](files-and-data.md#resetting-things). |

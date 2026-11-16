@@ -128,7 +128,7 @@ Description=Cloudify dashboard
 After=network-online.target
 
 [Service]
-ExecStart=%h/.local/bin/cloudify serve --host 127.0.0.1 --serve-port 8765
+ExecStart=%h/.local/bin/cloudify serve --serve-port 8765
 Restart=on-failure
 RestartSec=5
 
@@ -140,10 +140,15 @@ systemctl --user enable --now cloudify-dashboard
 loginctl enable-linger "$USER"        # start at boot without logging in
 ```
 
-`--host 127.0.0.1` (the default) keeps the dashboard private to this machine. To reach it from your laptop use
-an SSH tunnel (`ssh -L 8765:localhost:8765 user@server`, then open `http://localhost:8765`), or serve HTTPS
-on the network with `--host 0.0.0.0 --ssl-certfile ... --ssl-keyfile ...`. Read [Security](security.md)
-first.
+By default the dashboard is open to the network: it listens on every interface and answers under any address,
+such as the server's public IP on AWS or Azure. Allow TCP port 8765 in the security group or network security
+group. Over plain HTTP, passwords cross the network unencrypted, so:
+
+* for HTTPS, add `--ssl-certfile ... --ssl-keyfile ...`;
+* to lock it down, add `--secure`: this machine only, known names only. Reach it with an SSH tunnel
+  (`ssh -L 8765:localhost:8765 user@server`, then open `http://localhost:8765`).
+
+Read [Security](security.md) first.
 
 ## Firewall
 

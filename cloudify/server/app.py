@@ -1,6 +1,7 @@
 """FastAPI application: the JSON API plus the single web UI at /."""
 
 import ipaddress
+import re
 import socket
 import time
 from pathlib import Path
@@ -39,7 +40,7 @@ DOCS_INIT_JS = """SwaggerUIBundle({url: '/openapi.json', dom_id: '#swagger-ui', 
 
 app = FastAPI(title="Cloudify", version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
 
-_settings = {"check_host": False, "allowed_hosts": set(), "api_docs": False}
+_settings = {"check_host": False, "allowed_hosts": set(), "allowed_suffixes": set(), "api_docs": False}
 
 MAX_BODY = 256 * 1024  # bytes; the largest real request (a replica file) is a few KB
 # The only requests that may change something without a login token (their bodies are read before
@@ -100,10 +101,27 @@ DOCS_CSP = (f"default-src 'self'; script-src 'self' {SWAGGER_UI}/; style-src 'se
             "form-action 'self'; frame-ancestors 'none'")
 
 
+_PATTERN = re.compile(r"\*(\.[a-z0-9-]+){2,}")
+
+
+def allowed_host_error(name: str) -> Optional[str]:
+    """Why `name` can't be an allowed host, or None. A pattern, `*.example.com`, allows every name under
+    example.com. It needs at least two labels after `*.`: `*.com` would let any site under .com point its
+    own name at this machine and reach the dashboard (DNS rebinding)."""
+    name = name.strip().lower().rstrip(".")
+    if "*" in name and not _PATTERN.fullmatch(name):
+        return (f"'{name}' isn't a valid host pattern: use *.example.com, with '*.' only at the start and "
+                "at least two labels after it (e.g. *.trycloudflare.com)")
+    return None
+
+
 def configure(allowed_hosts: Iterable[str] = (), api_docs: bool = False, check_host: bool = True):
-    """Settings from `cloudify serve` (tests that use the app directly skip the host check)."""
+    """Settings from `cloudify serve` (tests that use the app directly skip the host check). Allowed hosts are
+    names, or patterns like `*.trycloudflare.com` (checked with allowed_host_error first)."""
+    names = {h.strip().lower().rstrip(".") for h in allowed_hosts if h and h.strip()}
     _settings.update(check_host=check_host, api_docs=api_docs,
-                     allowed_hosts={h.strip().lower().rstrip(".") for h in allowed_hosts if h and h.strip()})
+                     allowed_hosts={n for n in names if not n.startswith("*.")},
+                     allowed_suffixes={n[1:] for n in names if n.startswith("*.")})
 
 
 def _machine_names() -> set:
@@ -145,6 +163,8 @@ def host_allowed(header: str) -> bool:
         pass
     if host == "localhost" or host.endswith(".localhost") or host in _settings["allowed_hosts"]:
         return True
+    if any(host.endswith(suffix) for suffix in _settings["allowed_suffixes"]):  # e.g. ".trycloudflare.com"
+        return True
     if host in _machine_names():
         return True
     routes = _route_hostnames()
@@ -155,7 +175,8 @@ def origin_allowed(origin: str, host_header: str) -> bool:
     """CSRF guard for requests that change something: a browser always sends Origin with them. Accept the
     dashboard's own origin (same host and port as the request) and names given with --allowed-host or used
     by the tunnels' routes (the dashboard published through a proxy or tunnel); refuse every other site,
-    including `null` (sandboxed frames, local files)."""
+    including `null` (sandboxed frames, local files). Patterns like `*.trycloudflare.com` only let the
+    dashboard be opened under those names: a page on another name under them is still another site."""
     netloc = urlsplit(origin).netloc.lower() if origin and origin != "null" else ""
     if not netloc:
         return False
@@ -175,8 +196,9 @@ async def security(request: Request, call_next):
     if _settings["check_host"] and not host_allowed(request.headers.get("host", "")):
         host = request.headers.get("host", "")
         return JSONResponse(status_code=400, content={"detail": (
-            f"This dashboard can't be opened as '{host}'. Use its IP address or localhost, or start it with "
-            f"`cloudify serve --allowed-host {host.rsplit(':', 1)[0] or 'NAME'}`.")})
+            f"This dashboard runs in secure mode and can't be opened as '{host}'. Use its IP address or "
+            f"localhost, allow the name with `--allowed-host {host.rsplit(':', 1)[0] or 'NAME'}` (or "
+            "CLOUDIFY_ALLOWED_HOSTS), or start it without --secure.")})
     origin = request.headers.get("origin")
     writes = request.method not in ("GET", "HEAD", "OPTIONS")
     if writes and origin is not None and not origin_allowed(origin, request.headers.get("host", "")):

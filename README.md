@@ -153,9 +153,10 @@ Re-running the install script also updates cloudflared to the latest release.
 Start the dashboard (same command on Linux, macOS and Windows; no Node.js needed):
 
 ```bash
-cloudify serve                 # http://localhost:8765
+cloudify serve                 # http://localhost:8765, and this machine's IP addresses (e.g. a cloud server's public IP)
 cloudify serve --serve-port 9000
-cloudify serve --host 0.0.0.0 --ssl-certfile cert.pem --ssl-keyfile key.pem   # HTTPS for other devices
+cloudify serve --ssl-certfile cert.pem --ssl-keyfile key.pem   # HTTPS
+cloudify serve --secure        # locked down: this machine only, known names only
 ```
 
 ![Overview](docs/screenshots/overview.png)
@@ -189,10 +190,16 @@ Routes take a public hostname (`app.example.com` or `*.example.com`), a service 
 (`localhost`, an IP, or a Docker container name) and a port. `http://` is added for you.
 Light and dark themes are included, and the layout works on phones.
 
-By default the dashboard only listens on this machine (`127.0.0.1`). To use it from other devices, prefer
-an SSH tunnel (`ssh -L 8765:localhost:8765 server`), HTTPS (`--ssl-certfile/--ssl-keyfile`), or a tunnel route
-protected by Cloudflare Access; plain HTTP on the network needs `--insecure-http`. See
-[docs/security.md](docs/security.md). Interactive API docs: start with `--api-docs`, then open `/api/docs`.
+By default the dashboard is open to the network. It listens on every interface (port 8765) and answers under any
+address: the server's public IP on AWS or Azure, a domain, or a quick tunnel. On a cloud server, allow port 8765
+in the security group (AWS) or network security group (Azure).
+
+Anyone who can reach the port can open the login page, and over plain HTTP passwords cross the network
+unencrypted. To lock it down, start it with `--secure` (Docker: `CLOUDIFY_SECURE=1`): it then listens on this
+machine only and answers only to known names. Reach it with an SSH tunnel (`ssh -L 8765:localhost:8765 server`) or
+a tunnel route protected by Cloudflare Access. See [docs/security.md](docs/security.md).
+
+Interactive API docs: start with `--api-docs`, then open `/api/docs`.
 
 ## 🌐 Multiple Domains and Cloudflare Accounts
 
@@ -425,7 +432,7 @@ docker logs cloudify # to get the setup code
 The compose file sets `restart: unless-stopped`, so after a server reboot (or a crash) the
 container starts again and every tunnel with auto-start enabled is started inside it. It also uses host
 networking (`network_mode: host`): a route to `localhost` reaches the server, and the dashboard listens on port
-8765 of the server ([securing it](docs/docker.md#securing-the-dashboard)).
+8765 of the server, open to the network by default ([locking it down](docs/docker.md#securing-the-dashboard)).
 
 > **Why not in the image?** Docker restart policies belong to the container, not the image,
 > so they must be set with `restart:` in compose or `--restart` on `docker run`. Also make
