@@ -5,7 +5,7 @@
 # restart: unless-stopped -> the container (and every tunnel with auto-start
 # enabled) comes back after a server reboot or a crash, unless you stopped it
 # yourself with `docker compose stop`.
-name: cloudify  # project name: volume "cloudify_cloudify-data", network "cloudify"
+name: cloudify  # project name: volume "cloudify_cloudify-data"
 
 services:
   cloudify:
@@ -16,28 +16,23 @@ services:
       dockerfile: docker/Dockerfile
     container_name: cloudify
     restart: unless-stopped
-    ports:
-      # Dashboard on this machine only. To open it from other devices, prefer an SSH tunnel
-      # (ssh -L 8765:localhost:8765 server) or a tunnel route protected by Cloudflare Access;
-      # "8765:8765" publishes plain HTTP to your whole network (see docs/security.md).
-      - "0.0.0.0:8765:8765"
+    # Host networking: the container shares this machine's network, so in a route "localhost" is this
+    # machine. Services running on the host and the published ports of every other container are
+    # reachable as localhost:PORT, without joining networks. Linux; on Docker Desktop (macOS, Windows)
+    # turn on host networking in its settings first.
+    network_mode: host
+    # The dashboard listens on port 8765 of this machine, on every interface, over plain HTTP: anyone on
+    # your network can open it, and passwords cross the network unencrypted (see docs/security.md).
+    # To keep it on this machine only, or to use HTTPS, uncomment one of these:
+    # environment:
+    #   CLOUDIFY_SERVE_ARGS: "--host 127.0.0.1"
+    #   CLOUDIFY_SERVE_ARGS: "--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem"
     volumes:
       # Cloudflare login, tunnel credentials/configs, Cloudify accounts
       - cloudify-data:/root/.cloudflared
-    networks:
-      - cloudify
 
-  # Example service to expose; in the dashboard add a route to host "frontend", port 80.
-  # Put your own containers on the same network instead.
-  # frontend:
-  #   image: nginx:alpine
-  #   restart: unless-stopped
-  #   networks:
-  #     - cloudify
+  # Services to expose run as usual. Publish their port on this machine (e.g. "7631:80"), then add a
+  # route to host "localhost", port 7631 in the dashboard.
 
 volumes:
   cloudify-data:
-
-networks:
-  cloudify:
-    name: cloudify

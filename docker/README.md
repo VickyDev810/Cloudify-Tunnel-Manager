@@ -7,7 +7,7 @@ Everything Docker-specific lives in this folder. For installing directly on Linu
 | --- | --- |
 | `Dockerfile` | Image: Python 3.12, cloudflared (pinned, per architecture), Cloudify, cron, OpenSSH client, health check |
 | `entrypoint.sh` | Container start: cron, resume auto-start tunnels, then the dashboard |
-| `docker-compose.yml` | Recommended way to run it (restart policy + data volume) |
+| `docker-compose.yml` | Recommended way to run it (restart policy, data volume, host networking) |
 | `Dockerfile.dockerignore` | Files left out of the build context |
 
 All commands below run from the **repository root**.
@@ -23,11 +23,16 @@ Dashboard: http://localhost:8765, http://{Your server ip}:8765. Includes `restar
 auto-start come back after a server reboot (make sure Docker itself starts at boot:
 `sudo systemctl enable docker`).
 
+The container uses **host networking** (`network_mode: host`): in a route, `localhost` is the server, so
+services on the server and the published ports of your other containers are reachable as `localhost:PORT`.
+The dashboard listens on port 8765 of every interface over plain HTTP; to restrict it see
+[securing the dashboard](../docs/docker.md#securing-the-dashboard).
+
 ## Run with `docker run`
 
 ```bash
 docker build -f docker/Dockerfile -t cloudify:latest .
-docker run -d --restart unless-stopped -p 127.0.0.1:8765:8765 \
+docker run -d --restart unless-stopped --network host \
   -v cloudify-data:/root/.cloudflared --name cloudify cloudify:latest
 ```
 
@@ -46,16 +51,15 @@ docker buildx build -f docker/Dockerfile --platform linux/amd64,linux/arm64 -t c
 
 ## Reach other containers
 
-Put Cloudify and your services on the same network and use the container name as the route's service host:
+Publish each service's port on the server and route to `localhost`:
 
 ```bash
-docker network create my-net
-docker run -d --restart unless-stopped -p 127.0.0.1:8765:8765 -v cloudify-data:/root/.cloudflared \
-  --name cloudify --network my-net cloudify:latest
-docker run -d --restart unless-stopped --name frontend --network my-net <your-image>
+docker run -d --restart unless-stopped --name frontend -p 127.0.0.1:3000:80 <your-image>
 ```
 
-Then add a route `app.example.com → frontend : 3000`. The compose file already defines a `cloudify` network.
+Then add a route `app.example.com → localhost : 3000`. `127.0.0.1:` keeps the service off your network;
+Cloudify still reaches it. If you'd rather use a Docker network (e.g. on Docker Desktop), see
+[bridge networking](../docs/docker.md#bridge-networking-instead); there, routes use the container name.
 
 ## Use the CLI inside the container
 

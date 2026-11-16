@@ -6,9 +6,13 @@ to publish.
 
 ## The dashboard
 
-**Default: this machine only.** `cloudify serve` listens on `127.0.0.1:8765` and the Docker compose file
-publishes the port on `127.0.0.1` only. To use the dashboard from another device, choose one of these, from most
-to least secure:
+**Default: this machine only.** `cloudify serve` listens on `127.0.0.1:8765`.
+
+**In Docker it's different.** The compose file uses host networking, and the container's dashboard listens on
+port 8765 of every interface of the server, over plain HTTP. Restrict it with `CLOUDIFY_SERVE_ARGS`
+([Docker → Securing the dashboard](docker.md#securing-the-dashboard)).
+
+To use the dashboard from another device, choose one of these, from most to least secure:
 
 | Option | How |
 | --- | --- |
@@ -162,9 +166,16 @@ access code before using it, so a malicious code can't make `ssh` run commands o
 
 The container runs as root inside the container and holds all secrets in the `/root/.cloudflared` volume: protect
 the volume and its backups like `~/.cloudflared`. The compose file builds the image from your checkout (it never
-pulls a third-party image apart from the official `python` base image) and publishes the dashboard on
-`127.0.0.1`. The build checks the downloaded cloudflared against the SHA-256 published in its release notes. For HTTPS, set
-`CLOUDIFY_SERVE_ARGS="--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem"` ([Docker](docker.md#securing-the-dashboard)).
+pulls a third-party image apart from the official `python` base image). It runs with host networking, so the
+dashboard listens on port 8765 of every interface of the server over plain HTTP unless you set
+`CLOUDIFY_SERVE_ARGS`:
+
+* `--host 127.0.0.1` keeps it on this machine only;
+* `--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem` gives you HTTPS.
+
+Details are in [Docker](docker.md#securing-the-dashboard). The first account still needs the setup code from
+`docker logs cloudify`. The build checks the downloaded cloudflared against the SHA-256 published in its release
+notes.
 
 ## Reporting a vulnerability
 

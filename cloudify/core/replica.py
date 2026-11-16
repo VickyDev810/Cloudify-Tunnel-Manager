@@ -198,7 +198,7 @@ def split(manager, tunnel: str, hostnames: List[str], new_name: str) -> bool:
             new_id = cloudflared.tunnel_id(new_name, manager._cert_for_tunnel(new_name))
         except ValueError as e:  # AccountNotConnected
             raise ReplicaError(str(e))
-    if not new_id or not os.path.exists(paths.credentials_file(new_id)):
+    if not new_id or not os.path.exists(paths.collect_credentials(new_id)):
         out(f"The new tunnel '{new_name}' wasn't created on this machine; nothing was moved")
         return False
 
@@ -266,7 +266,7 @@ def export(manager, tunnels: List[str], passphrase: str) -> Dict:
         if not tunnel_id:
             raise ReplicaError(f"Can't find '{name}' in Cloudflare")
         try:
-            with open(paths.credentials_file(tunnel_id)) as f:
+            with open(paths.collect_credentials(tunnel_id)) as f:
                 credentials = json.load(f)
         except (OSError, ValueError):
             raise ReplicaError(f"The credentials of '{name}' are not on this machine "

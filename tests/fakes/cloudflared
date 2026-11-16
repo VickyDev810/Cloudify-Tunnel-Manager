@@ -136,10 +136,14 @@ if cmd == "run":
     name = args[1]
     if not config or not os.path.exists(config):
         fail("config missing")
-    creds = None
+    creds = tunnel_ref = None
     for line in open(config):
         if line.startswith("credentials-file:"):
             creds = line.split(":", 1)[1].strip().strip("'\"")
+        elif line.startswith("tunnel:"):
+            tunnel_ref = line.split(":", 1)[1].strip().strip("'\"")
+    if not creds and tunnel_ref:  # like the real one: <id>.json next to the default certificate (~/.cloudflared)
+        creds = os.path.join(CF, f"{tunnel_ref}.json")
     if not creds or not os.path.exists(creds):
         fail("tunnel credentials file not found")
     tunnel_id = json.load(open(creds))["TunnelID"]
@@ -205,10 +209,13 @@ elif cmd == "create":
     tunnel = {"id": str(uuid.uuid4()), "name": name, "account": account}
     db["tunnels"].append(tunnel)
     save(db)
-    with open(os.path.join(CF, f"{tunnel['id']}.json"), "w") as f:
+    # like the real one: the credentials go next to the certificate given with --origincert
+    creds = os.path.join(os.path.dirname(os.path.abspath(cert_path)), f"{tunnel['id']}.json")
+    with open(creds, "w") as f:
         json.dump({"AccountTag": account, "TunnelSecret": base64.b64encode(os.urandom(32)).decode(),
                    "TunnelID": tunnel["id"]}, f)
-    print(f"Tunnel credentials written to {CF}/{tunnel['id']}.json\nCreated tunnel {name} with id {tunnel['id']}")
+    os.chmod(creds, 0o400)
+    print(f"Tunnel credentials written to {creds}\nCreated tunnel {name} with id {tunnel['id']}")
 elif cmd == "route" and args[1] == "dns":
     rest = [a for a in args[2:] if not a.startswith("-")]
     overwrite = "--overwrite-dns" in args or "-f" in args

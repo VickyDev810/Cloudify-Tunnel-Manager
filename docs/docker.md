@@ -28,8 +28,8 @@ What the compose file sets up:
 | --- | --- |
 | `restart: unless-stopped` | The container, and with it every tunnel with auto-start, comes back after a crash or a reboot of the server (unless you stopped it yourself). |
 | volume `cloudify-data` → `/root/.cloudflared` | Cloudflare logins, tunnel credentials and configs, Cloudify users and connections survive re-creating or upgrading the container. |
-| port `127.0.0.1:8765:8765` | The dashboard, reachable from this machine only (see *Securing the dashboard*). |
-| network `cloudify` | Put your own containers on it and route to them by container name. |
+| `network_mode: host` | The container uses this machine's network. In a route, `localhost` is this machine, so services on the host and the published ports of all other containers are reachable as `localhost:PORT` ([routing](#routing-to-your-services)). |
+| dashboard on port 8765 | It listens on every interface of this machine, over plain HTTP (see *Securing the dashboard*). |
 
 Make sure Docker itself starts at boot: `sudo systemctl enable docker` (Docker Desktop: *Start Docker Desktop
 when you sign in*).
@@ -38,8 +38,8 @@ when you sign in*).
 
 ```bash
 docker build -f docker/Dockerfile -t cloudify:latest .
-docker run -d --name cloudify --restart unless-stopped \
-  -p 127.0.0.1:8765:8765 -v cloudify-data:/root/.cloudflared cloudify:latest
+docker run -d --name cloudify --restart unless-stopped --network host \
+  -v cloudify-data:/root/.cloudflared cloudify:latest
 ```
 
 `--restart` and `-v` are essential: a restart policy belongs to the container, not the image, and without the
@@ -59,16 +59,14 @@ Silicon, AWS Graviton), arm (32-bit Raspberry Pi OS) and 386.
 
 ## Routing to your services
 
-A route's *service host* is resolved **inside the container**, so `localhost` means the container itself.
-Pick the right host for where your service runs:
+With the included compose file the container uses **host networking**, so a route's *service host* is resolved
+on this machine: `localhost` is the Docker host.
 
-| Service runs... | Service host in the route | Setup |
+| Service runs... | Service host and port in the route | Setup |
 | --- | --- | --- |
-| in another container | the container name, e.g. `frontend` | Both containers on the same network (see below) |
-| on the Docker host (Linux) | `host.docker.internal` | Add `extra_hosts: ["host.docker.internal:host-gateway"]` to the `cloudify` service |
-| on the Docker host (Docker Desktop) | `host.docker.internal` | Nothing, it exists already |
+| on the Docker host | `localhost` and its port | Nothing |
+| in another container | `localhost` and the port it publishes on the host, e.g. `ports: ["7631:80"]` → `localhost`, `7631` | Publish its port |
 | on another machine in your LAN | its IP, e.g. `192.168.1.20` | Nothing |
-| on the host, with host networking | `localhost` | `network_mode: host` (Linux only; remove `ports:` and `networks:`) |
 
 Example: an app container next to Cloudify.
 
@@ -80,15 +78,38 @@ services:
   frontend:
     image: nginx:alpine
     restart: unless-stopped
-    networks:
-      - cloudify
+    ports:
+      - "127.0.0.1:8080:80"   # Cloudify reaches it on localhost:8080; your network can't reach it directly
 ```
 
-Then add the route `app.example.com → frontend : 80` in the dashboard, or
-`docker exec cloudify cloudify route add app.example.com 80 --service frontend -t web`.
+Then add the route `app.example.com → localhost : 8080` in the dashboard, or
+`docker exec cloudify cloudify route add app.example.com 8080 -t web`.
 
-Containers started separately can join the network: `docker run -d --network cloudify --name api my-api-image`
-or `docker network connect cloudify api`.
+Containers started separately work the same way: `docker run -d -p 127.0.0.1:8080:80 --name api my-api-image`,
+then route to `localhost`, port `8080`.
+
+### Bridge networking instead
+
+Use bridge networking on Docker Desktop without host networking, or to keep the Cloudify container in a
+network of its own. Replace `network_mode: host` in the compose file with:
+
+```yaml
+    ports:
+      - "127.0.0.1:8765:8765"
+    networks:
+      - cloudify
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```
+
+Then add `networks: { cloudify: { name: cloudify } }` at the end of the file (`docker run`: `-p 127.0.0.1:8765:8765
+--add-host host.docker.internal:host-gateway` instead of `--network host`).
+
+With bridge networking, `localhost` in a route is the Cloudify container itself:
+
+* for a service on the Docker host, use `host.docker.internal`;
+* for another container, use its name and put it on the same network (`networks: [cloudify]`, or
+  `docker network connect cloudify api`).
 
 ## The command line inside the container
 
@@ -176,29 +197,32 @@ Use `docker volume ls` to see the volume's exact name (`cloudify_cloudify-data` 
 
 ## Securing the dashboard
 
-The compose file publishes the dashboard on `127.0.0.1` only, so it is reachable from the Docker host itself.
-To use it from your laptop, pick one:
+With host networking, the dashboard listens on port 8765 of every interface of this machine, over plain HTTP.
+Anyone on your network can open the login page, and passwords and login tokens cross the network unencrypted.
+Creating the first account needs the setup code from `docker logs cloudify`, so nobody else can claim a new
+installation. To restrict or encrypt access, set `CLOUDIFY_SERVE_ARGS` in the compose file (`environment:`):
 
-* **SSH tunnel** (nothing to change): `ssh -L 8765:localhost:8765 user@server`, then open `http://localhost:8765`.
-* **HTTPS**: mount a certificate and key and pass them to the dashboard, then publish the port on the network:
+* **This machine only:** `CLOUDIFY_SERVE_ARGS: "--host 127.0.0.1"`. From your laptop, use an SSH tunnel:
+  `ssh -L 8765:localhost:8765 user@server`, then open `http://localhost:8765`.
+* **HTTPS:** mount a certificate and a key:
 
   ```yaml
       environment:
         CLOUDIFY_SERVE_ARGS: "--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem"
       volumes:
+        - cloudify-data:/root/.cloudflared
         - ./certs:/certs:ro
-      ports:
-        - "8765:8765"
   ```
 
-* **Cloudflare Access**: add a route `dash.example.com → localhost:8765` on a tunnel and protect that hostname
-  with a Cloudflare Access policy (Zero Trust → Access → Applications); start the dashboard with
-  `CLOUDIFY_SERVE_ARGS="--insecure-http --allowed-host dash.example.com"`.
-* **Plain HTTP on a trusted network**: change the mapping to `"8765:8765"`. Passwords and login tokens then cross
-  the network unencrypted.
+* **Cloudflare Access:**
+  1. On a tunnel, add a route `dash.example.com → localhost:8765`.
+  2. Protect that hostname with a Cloudflare Access policy (Zero Trust → Access → Applications).
+  3. Set `CLOUDIFY_SERVE_ARGS: "--host 127.0.0.1 --allowed-host dash.example.com"`.
 
-Creating the first account needs the setup code from `docker logs cloudify`, so nobody else on the network can
-claim a new installation. See [Security](security.md) for more.
+  The tunnel reaches the dashboard on `localhost`; nobody on your network can.
+* **A firewall rule** that allows port 8765 only from the machines that need it.
+
+See [Security](security.md) for more.
 
 ## Removing
 
@@ -216,7 +240,9 @@ first (dashboard or `docker exec cloudify cloudify tunnel delete <name>`) if you
   feature, or `docker run` with a volume or a host folder (e.g. `-v /volume1/docker/cloudify:/root/.cloudflared`).
 * **Raspberry Pi:** build on the Pi (`docker compose ... up -d --build`) or with `buildx` for `linux/arm64`
   (64-bit OS) or `linux/arm/v7` (32-bit OS).
-* **Docker Desktop (macOS/Windows):** works as is; use `host.docker.internal` to reach services running
-  on your computer.
-* **Rootless Docker / Podman:** work as well; `podman compose` reads the same file. Publishing ports
-  below 1024 is not needed (8765).
+* **Docker Desktop (macOS/Windows):** host networking needs Docker Desktop 4.34 or later, with *Enable host
+  networking* turned on (Settings → Resources → Network). Otherwise use [bridge
+  networking](#bridge-networking-instead) and `host.docker.internal` for services running on your computer.
+* **Rootless Docker / Podman:** work as well; `podman compose` reads the same file. With rootless Docker,
+  host networking uses the rootless network namespace. If routes to `localhost` don't reach your services
+  there, use [bridge networking](#bridge-networking-instead).

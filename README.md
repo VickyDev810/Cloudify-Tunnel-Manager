@@ -110,12 +110,15 @@ git clone https://github.com/yash7158/Cloudify_v2.git && cd Cloudify_v2
 docker compose -f docker/docker-compose.yml up -d --build  # build + run, restarts after reboot
 # or without compose:
 docker build -f docker/Dockerfile -t cloudify:latest .
-docker run -d --restart unless-stopped -p 127.0.0.1:8765:8765 -v cloudify-data:/root/.cloudflared \
+docker run -d --restart unless-stopped --network host -v cloudify-data:/root/.cloudflared \
   --name cloudify cloudify:latest
 
 # to get the setup code
 docker logs cloudify
 ```
+
+The container uses **host networking**, so in a route `localhost` is the server itself: services on the host and
+the published ports of your other containers are reachable as `localhost:PORT`.
 
 Full guide (networks, updating, moving from the 1.x container, backups, NAS and Raspberry Pi):
 [docs/docker.md](docs/docker.md).
@@ -420,7 +423,9 @@ docker logs cloudify # to get the setup code
 ```
 
 The compose file sets `restart: unless-stopped`, so after a server reboot (or a crash) the
-container starts again and every tunnel with auto-start enabled is started inside it.
+container starts again and every tunnel with auto-start enabled is started inside it. It also uses host
+networking (`network_mode: host`): a route to `localhost` reaches the server, and the dashboard listens on port
+8765 of the server ([securing it](docs/docker.md#securing-the-dashboard)).
 
 > **Why not in the image?** Docker restart policies belong to the container, not the image,
 > so they must be set with `restart:` in compose or `--restart` on `docker run`. Also make
@@ -431,31 +436,25 @@ container starts again and every tunnel with auto-start enabled is started insid
 
 ```bash
 docker build -f docker/Dockerfile -t cloudify:latest .
-docker run -d --restart unless-stopped -p 127.0.0.1:8765:8765 -v cloudify-data:/root/.cloudflared --name cloudify cloudify:latest
+docker run -d --restart unless-stopped --network host -v cloudify-data:/root/.cloudflared --name cloudify cloudify:latest
 ```
 
 The `cloudify-data` volume keeps your Cloudflare login, tunnel credentials, configs and
 Cloudify accounts when the container is re-created.
 
-### Docker Network Setup (Recommended)
+### Reaching your other containers
 
-For accessing services outside the container, create a Docker network:
+With host networking, publish the service's port on the server and route to `localhost`:
 
 ```bash
-# Create network
-docker network create my-net
-
-# Run Cloudify with network
-docker run -d --restart unless-stopped -p 127.0.0.1:8765:8765 -v cloudify-data:/root/.cloudflared --name cloudify --network my-net cloudify:latest
-
-# Run your service container on the same network
-docker run -d --restart unless-stopped --name frontend --network my-net <your-image>
+# your service, published on this machine only (Cloudify reaches it; your network can't directly)
+docker run -d --restart unless-stopped --name frontend -p 127.0.0.1:3000:80 <your-image>
 ```
 
-Access the UI at `localhost:8765` and configure:
+In the dashboard, add a route with **Service host** `localhost` and **Port** `3000`.
 
-* **End User URL:** `frontend` (container name)
-* **Port:** `3000` (or your service port)
+If you prefer a Docker network instead of host networking (e.g. on Docker Desktop), see
+[bridge networking](docs/docker.md#bridge-networking-instead); then routes use the container name.
 
 ## 📚 Examples
 
@@ -482,23 +481,18 @@ cloudify route add app.mydomain.com 3000
 ### Example 2: Docker Multi-Service Setup
 
 ```bash
-# Create network
-docker network create app-network
+# Start Cloudify (host networking)
+docker run -d --restart unless-stopped --network host -v cloudify-data:/root/.cloudflared --name cloudify cloudify:latest
 
-# Start Cloudify
-docker run -d --restart unless-stopped -p 127.0.0.1:8765:8765 -v cloudify-data:/root/.cloudflared --name cloudify --network app-network cloudify:latest
-
-# Start frontend service
-docker run -d --restart unless-stopped --name frontend --network app-network -p 3000:3000 my-frontend-image
-
-# Start backend service  
-docker run -d --restart unless-stopped --name backend --network app-network -p 8000:8000 my-backend-image
+# Start the services, published on this machine only
+docker run -d --restart unless-stopped --name frontend -p 127.0.0.1:3000:3000 my-frontend-image
+docker run -d --restart unless-stopped --name backend -p 127.0.0.1:8000:8000 my-backend-image
 ```
 
 Then configure routes in the UI:
 
-* Frontend: `frontend:3000` → `app.mydomain.com`
-* Backend: `backend:8000` → `api.mydomain.com`
+* Frontend: `localhost:3000` → `app.mydomain.com`
+* Backend: `localhost:8000` → `api.mydomain.com`
 
 ## 🛠️ Development
 

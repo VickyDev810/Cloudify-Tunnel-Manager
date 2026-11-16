@@ -8,7 +8,7 @@ covered by the automated tests).
 | --- | --- | --- | --- |
 | Installer | `install.sh` inside Ubuntu | `docker compose` | `pip`/`pipx` by hand |
 | Tunnels start | when WSL runs | when Docker Desktop starts | at Windows sign-in (Task Scheduler) |
-| Reach services on Windows | `localhost` (WSL forwards it) or the Windows IP | `host.docker.internal` | `localhost` |
+| Reach services on Windows | `localhost` (WSL forwards it) or the Windows IP | `localhost` with host networking turned on in Docker Desktop, otherwise `host.docker.internal` | `localhost` |
 | Best for | development machines | always-on PCs and home servers | trying it out |
 
 ## Option 1: WSL 2 (recommended for development)
@@ -50,8 +50,10 @@ Notes:
    docker compose -f docker/docker-compose.yml up -d --build
    ```
 
-3. Open `http://localhost:8765`. For services running on Windows use the service host
-   `host.docker.internal` in your routes.
+3. Open `http://localhost:8765`. The compose file uses host networking. In Docker Desktop 4.34 or later, turn on
+   *Enable host networking* (Settings → Resources → Network); routes can then use `localhost` for services
+   running on Windows. Otherwise switch the compose file to [bridge networking](docker.md#bridge-networking-instead)
+   and use the service host `host.docker.internal`.
 
 Everything else is in the [Docker guide](docker.md).
 

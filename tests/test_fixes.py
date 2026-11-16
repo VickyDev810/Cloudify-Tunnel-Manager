@@ -1229,3 +1229,37 @@ def test_route_changes_never_start_a_stopped_tunnel(env):
     rc, out = env.cli("route", "edit", "app.example.com", "--port", "3003", "-t", "web")
     assert rc == 0 and "restarted" in out.lower(), out  # a running tunnel is still restarted
     assert wait_for(lambda: len(tunnel_pids("web", env.home)) == 1)
+
+
+# ------------------------------------------------------------------ tunnels of connected domains could never start
+
+def test_tunnels_of_connected_domains_find_their_credentials(env):
+    """cloudflared writes a new tunnel's credentials next to the certificate it was given: for a domain
+    connected through Cloudify that is ~/.cloudflared/cloudify/certs, where `tunnel run` never looks."""
+    for domain in ("example.com", "other.org"):
+        assert env.cli("account", "connect", domain)[0] == 0
+    rc, out = env.cli("tunnel", "create", "web", "--no-autostart", "--account", "other.org")
+    assert rc == 0, out
+    tunnel_id = env.remote_tunnel("web")["id"]
+    certs = env.cf / "cloudify" / "certs"
+    assert (env.cf / f"{tunnel_id}.json").exists() and not (certs / f"{tunnel_id}.json").exists()
+    rc, out = env.cli("route", "add", "app.other.org", "3000", "-t", "web", stdin="n\n")
+    assert rc == 0, out
+    assert f"credentials-file: {env.cf}/{tunnel_id}.json" in (env.cf / "config-web.yml").read_text()
+    assert wait_for(lambda: len(tunnel_pids("web", env.home)) == 1)
+
+    # a tunnel left like this by an earlier version (credentials in certs/, no credentials-file) starts again
+    assert env.cli("tunnel", "stop", "web")[0] == 0
+    assert wait_for(lambda: not tunnel_pids("web", env.home))
+    os.rename(env.cf / f"{tunnel_id}.json", certs / f"{tunnel_id}.json")
+    config = env.cf / "config-web.yml"
+    config.write_text("".join(l for l in config.read_text().splitlines(True) if not l.startswith("credentials-file:")))
+    rc, out = env.cli("tunnel", "start", "web")
+    assert rc == 0, out
+    assert wait_for(lambda: len(tunnel_pids("web", env.home)) == 1)
+    assert (env.cf / f"{tunnel_id}.json").exists() and not (certs / f"{tunnel_id}.json").exists()
+
+    assert env.cli("tunnel", "stop", "web")[0] == 0
+    rc, out = env.cli("tunnel", "delete", "web", "--force")
+    assert rc == 0, out
+    assert not (env.cf / f"{tunnel_id}.json").exists() and not (certs / f"{tunnel_id}.json").exists()

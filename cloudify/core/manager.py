@@ -226,6 +226,12 @@ class TunnelManager:
         value = str(config.get("tunnel") or "")
         return value.lower() if _UUID.fullmatch(value) else None
 
+    def _collect_credentials(self, tunnel_name: str):
+        """Move the tunnel's credentials to where `cloudflared tunnel run` looks (see paths.collect_credentials)."""
+        tunnel_id = self._recorded_id(tunnel_name)
+        if tunnel_id:
+            paths.collect_credentials(tunnel_id)
+
     def _resolve_remote(self, tunnel_name: str, account_id: Optional[str] = None
                         ) -> Tuple[Optional[Dict], Optional[str]]:
         return self._pick_remote(tunnel_name, self.remote_tunnels(), account_id)
@@ -648,6 +654,8 @@ class TunnelManager:
         created = next((t for t in (cloudflared.list_tunnels_checked(cert) or []) if t.get("name") == tunnel_name), None)
         self.state.update(tunnel_name, {"account_id": account_id or (created or {}).get("account_id"),
                                         "tunnel_id": (created or {}).get("id")})
+        if (created or {}).get("id"):
+            paths.collect_credentials(str(created["id"]).lower())  # cloudflared put them next to the account's cert
         self.out("Tunnel created successfully!")
 
         if setup_auto_start:
@@ -703,7 +711,7 @@ class TunnelManager:
                 self.setup_autostart()
 
         config["tunnel"] = tunnel_id
-        if os.path.exists(paths.credentials_file(tunnel_id)):
+        if os.path.exists(paths.collect_credentials(tunnel_id)):
             config["credentials-file"] = paths.credentials_file(tunnel_id)
 
         service = f"http://{host}:{port}"
@@ -955,6 +963,7 @@ class TunnelManager:
         if not os.path.exists(paths.tunnel_config(tunnel_name)):
             self.out(f"No configuration found for tunnel '{tunnel_name}'. Add a route first.")
             return False
+        self._collect_credentials(tunnel_name)
         if self.tunnel_status(tunnel_name).startswith("running"):
             self.out(f"Tunnel '{tunnel_name}' is already running")
             return True
@@ -1009,6 +1018,7 @@ class TunnelManager:
     def setup_autostart(self) -> bool:
         if not self._known(self.tunnel_name):
             return False
+        self._collect_credentials(self.tunnel_name)
         backend = self._backend()
         if not backend:
             self.out("Auto-start is not supported on this platform")
@@ -1156,7 +1166,8 @@ class TunnelManager:
                 return False
 
         for path in (paths.tunnel_config(tunnel_name),
-                     paths.credentials_file(tunnel_id) if tunnel_id else None):
+                     paths.credentials_file(tunnel_id) if tunnel_id else None,
+                     os.path.join(paths.data_dir(), "certs", f"{tunnel_id}.json") if tunnel_id else None):
             if path and os.path.exists(path):
                 try:
                     os.remove(path)
