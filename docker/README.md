@@ -16,9 +16,10 @@ All commands below run from the **repository root**.
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
+docker logs cloudify #to get the setup code
 ```
 
-Dashboard: http://localhost:8765. Includes `restart: unless-stopped`, so the container and every tunnel with
+Dashboard: http://localhost:8765, http://{Your server ip}:8765. Includes `restart: unless-stopped`, so the container and every tunnel with
 auto-start come back after a server reboot (make sure Docker itself starts at boot:
 `sudo systemctl enable docker`).
 
