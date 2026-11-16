@@ -139,3 +139,21 @@ def cf_api(systemd_env):
     systemd_env.vars["CLOUDIFY_CF_API"] = api.url
     yield api
     api.close()
+
+
+def pytest_terminal_summary(terminalreporter):
+    """On GitHub Actions, repeat each failure as an annotation. GitHub shows annotations on the run's page to
+    everyone, while the job log itself is visible only to the repository's owner."""
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+
+    def esc(text, prop=False):  # GitHub's workflow-command escaping
+        text = text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+        return text.replace(":", "%3A").replace(",", "%2C") if prop else text
+
+    for kind in ("failed", "error"):
+        for report in terminalreporter.stats.get(kind, []):
+            path, line, _ = getattr(report, "location", None) or (report.nodeid, None, None)
+            tail = "\n".join(report.longreprtext.strip().splitlines()[-20:])
+            terminalreporter.write_line(f"::error file={esc(path, True)},line={(line or 0) + 1},"
+                                        f"title={esc(report.nodeid, True)}::{esc(tail)}")

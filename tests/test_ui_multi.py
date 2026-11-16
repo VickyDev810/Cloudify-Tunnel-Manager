@@ -35,8 +35,11 @@ def connect_domain(page, domain):
     dialog.locator("#cfDomain").fill(domain)
     dialog.get_by_role("button", name="Connect Cloudflare").click()
     expect(dialog.locator(".auth-link")).to_contain_text("argotunnel")
+    # The dialog closes when this login is done. The toast alone can't tell: the previous domain's toast
+    # stays on screen for 4.5 s, which once let a slow CI run check for the domain before it was connected.
+    expect(dialog).to_have_count(0, timeout=15000)
     toast(page, "Cloudflare domain connected")
-    expect(page.locator(f'[data-connection] >> text="{domain}"')).to_be_visible()
+    expect(page.locator(f'[data-connection] >> text="{domain}"')).to_be_visible(timeout=10000)
 
 
 @pytest.fixture
