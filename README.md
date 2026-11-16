@@ -112,6 +112,9 @@ docker compose -f docker/docker-compose.yml up -d --build  # build + run, restar
 docker build -f docker/Dockerfile -t cloudify:latest .
 docker run -d --restart unless-stopped -p 127.0.0.1:8765:8765 -v cloudify-data:/root/.cloudflared \
   --name cloudify cloudify:latest
+
+# to get the setup code
+docker logs cloudify
 ```
 
 Full guide (networks, updating, moving from the 1.x container, backups, NAS and Raspberry Pi):
@@ -413,6 +416,7 @@ cloudify route remove <subdomain.domain.com>
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
+docker logs cloudify # to get the setup code
 ```
 
 The compose file sets `restart: unless-stopped`, so after a server reboot (or a crash) the
