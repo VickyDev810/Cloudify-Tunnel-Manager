@@ -25,7 +25,8 @@ The installer:
 1. backs up and replaces an existing installation, including Cloudify 1.x ([Updating](updating.md));
 2. installs what is missing with Homebrew: Python 3 (only if the system one is older than 3.8), pipx and git;
 3. installs or upgrades **cloudflared** with Homebrew (`brew install cloudflared`);
-4. installs Cloudify with pipx (its own environment; nothing is installed into the system Python);
+4. installs Cloudify with pipx, on the Python pipx itself runs on (its own environment; nothing is installed
+   into the system Python);
 5. adds `~/.local/bin` to your shell's PATH (zsh is the default shell on macOS).
 
 Open a new terminal window, then check:

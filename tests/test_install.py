@@ -33,6 +33,10 @@ CASES = {
     # a fresh, out-of-date Arch image: the installer must stop with clear instructions instead
     "archlinux-outdated": ("archlinux:latest", "bash /src/install.sh --local /src; echo EXIT=$?"),
     "alpine-3.20-root": ("alpine:3.20", "apk add --no-cache bash >/dev/null && bash /src/tests/install/check.sh {mode}"),
+    # python3 (3.9 here) is older than the Python pipx runs on, as on a Mac where Apple's 3.9 comes before
+    # Homebrew's in PATH. pipx's shared pip no longer runs on 3.9, so Cloudify must get pipx's own Python
+    "pipx-on-newer-python-than-python3": (
+        "python:3.9-slim", "apt-get update -qq && apt-get install -y -qq pipx >/dev/null && bash /src/tests/install/check.sh {mode}"),
     # updating from 1.x
     "update-1.x-pip-user-debian-12": (
         "debian:12", "apt-get update -qq && apt-get install -y -qq sudo python3-pip >/dev/null && "

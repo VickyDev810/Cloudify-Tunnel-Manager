@@ -615,7 +615,13 @@ fi
 case " $EXISTING " in *" pip-user "*) remove_user_site_installs ;; esac
 
 if [ "$INSTALLER" = pipx ]; then
-    run pipx install --force --python "$PY" "$SRC" || die "pipx could not install Cloudify (re-run with --verbose to see why)"
+    # pipx shares one pip among everything it installs, made for the Python pipx runs on, and new pip
+    # versions drop old Pythons (pip 26.1 needs 3.10). The Python found above can be older than pipx's:
+    # on a Mac, Apple's 3.9 comes before Homebrew's Python when /usr/bin is first in PATH. So pipx's
+    # own Python comes first; the one found above is for a pipx running on Python older than 3.8.
+    run pipx install --force "$SRC" \
+        || run pipx install --force --python "$PY" "$SRC" \
+        || die "pipx could not install Cloudify (re-run with --verbose to see why)"
     CLOUDIFY_BIN="$(pipx environment --value PIPX_BIN_DIR 2>/dev/null || echo "$BIN_DIR")/cloudify"
 else
     mkdir -p "$(dirname "$VENV_DIR")" "$BIN_DIR"

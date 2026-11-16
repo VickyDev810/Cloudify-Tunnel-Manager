@@ -22,6 +22,7 @@ Logs: `~/.cloudflared/logs/<name>.log` (tunnels started directly), `journalctl -
 | *The downloaded cloudflared doesn't run on this system* | Unusual CPU or a 32-bit userland on a 64-bit kernel. Install cloudflared from your distribution or [Cloudflare's packages](https://pkg.cloudflare.com/), then run the installer with `--skip-cloudflared`. |
 | *cloudflared ... is managed by your package manager* | Update it with that package manager (`sudo apt upgrade cloudflared`, `sudo dnf upgrade cloudflared`). |
 | macOS asks for the Command Line Tools | Accept, wait for the install to finish, run the installer again. |
+| *pipx could not install Cloudify*, with `dataclass() got an unexpected keyword argument 'slots'` | pipx was given an older Python than its own, e.g. Apple's 3.9 on a Mac, and the pip that pipx shares (26.1 and later) doesn't run on it. The current installer uses pipx's own Python: run it again. By hand, leave out `--python`: `pipx install git+https://github.com/yash7158/Cloudify_v2.git`. |
 | Anything else | Run again with `--verbose` to see every command's output. |
 
 ## Cloudflare login
