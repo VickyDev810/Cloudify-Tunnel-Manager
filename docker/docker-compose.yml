@@ -20,7 +20,7 @@ services:
       # Dashboard on this machine only. To open it from other devices, prefer an SSH tunnel
       # (ssh -L 8765:localhost:8765 server) or a tunnel route protected by Cloudflare Access;
       # "8765:8765" publishes plain HTTP to your whole network (see docs/security.md).
-      - "127.0.0.1:8765:8765"
+      - "0.0.0.0:8765:8765"
     volumes:
       # Cloudflare login, tunnel credentials/configs, Cloudify accounts
       - cloudify-data:/root/.cloudflared
