@@ -87,7 +87,7 @@ function renderShell() {
   mount(root, html`
     <div class="shell" id="shell">
       <aside class="sidebar">
-        <div class="brand"><span class="brand-mark">${icon('tunnel')}</span>Cloudify<span class="version" data-version></span></div>
+        <div class="brand"><span class="brand-mark">${icon('mark')}</span>Cloudify<span class="version" data-version></span></div>
         <nav class="nav">
           ${GROUPS.map((group) => html`
             <div class="nav-label">${group}</div>

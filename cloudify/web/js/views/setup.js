@@ -76,7 +76,7 @@ export function renderSetup(root, { setup, onFinish }) {
   const frame = (step, content) => mount(root, html`
     <div class="auth-wrap">
       <div class="card auth-card wide">
-        <div class="brand"><span class="brand-mark">${icon('tunnel')}</span>Cloudify</div>
+        <div class="brand"><span class="brand-mark">${icon('mark')}</span>Cloudify</div>
         <p class="lead">Let's get your tunnel manager ready</p>
         <div class="steps">${steps.map((label, i) => html`
           <div class="step ${i === step ? 'active' : i < step ? 'done' : ''}"><div class="bar"></div>${i + 1}. ${label}</div>`)}

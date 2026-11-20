@@ -18,70 +18,70 @@
   --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --bg: #fafafa;
-  --bg-elevated: #ffffff;
-  --surface: #ffffff;
-  --surface-2: #f5f5f5;
-  --surface-3: #ededed;
-  --border: rgba(0, 0, 0, .08);
-  --border-strong: rgba(0, 0, 0, .14);
-  --text: #171717;
-  --text-2: #525252;
-  --text-3: #8f8f8f;
-  --accent: #0070f3;
-  --accent-hover: #0061d5;
-  --accent-soft: rgba(0, 112, 243, .08);
+  --bg: #e4efeb;            /* mist */
+  --bg-elevated: #f4f9f7;
+  --surface: #f4f9f7;
+  --surface-2: #dee9e5;
+  --surface-3: #d0ddd9;
+  --border: rgba(11, 34, 38, .1);
+  --border-strong: rgba(11, 34, 38, .18);
+  --text: #0b2226;          /* midnight teal */
+  --text-2: #435759;
+  --text-3: #66797a;
+  --accent: #c23e1e;        /* coral, deepened for text on mist */
+  --accent-hover: #a53318;
+  --accent-soft: rgba(255, 107, 74, .1);
   --accent-text: #ffffff;
-  --primary: #171717;
-  --primary-hover: #000000;
-  --primary-text: #ffffff;
-  --success: #16a34a;
-  --success-soft: rgba(22, 163, 74, .1);
-  --warning: #d97706;
-  --warning-soft: rgba(245, 166, 35, .12);
-  --danger: #e5484d;
-  --danger-soft: rgba(229, 72, 77, .1);
-  --toast-bg: #171717;
-  --toast-text: #fafafa;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .04);
-  --shadow: 0 2px 2px rgba(0, 0, 0, .03), 0 8px 16px -4px rgba(0, 0, 0, .05);
-  --shadow-lg: 0 24px 64px -16px rgba(0, 0, 0, .25);
+  --primary: #ff6b4a;       /* coral: the call to action */
+  --primary-hover: #eb6244;
+  --primary-text: #1b0a05;
+  --success: #1d7a4c;
+  --success-soft: rgba(29, 122, 76, .12);
+  --warning: #8a5a00;
+  --warning-soft: rgba(196, 140, 40, .16);
+  --danger: #c4373c;
+  --danger-soft: rgba(196, 55, 60, .1);
+  --toast-bg: #0b2226;
+  --toast-text: #edf5f2;
+  --shadow-sm: 0 1px 2px rgba(11, 34, 38, .05);
+  --shadow: 0 2px 2px rgba(11, 34, 38, .03), 0 8px 16px -4px rgba(11, 34, 38, .07);
+  --shadow-lg: 0 24px 64px -16px rgba(11, 34, 38, .3);
   --radius: 12px;
   --radius-sm: 6px;
-  --grid-line: rgba(0, 0, 0, .045);
+  --grid-line: rgba(11, 34, 38, .05);
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --bg: #000000;
-  --bg-elevated: #0a0a0a;
-  --surface: #0a0a0a;
-  --surface-2: #141414;
-  --surface-3: #1f1f1f;
-  --border: rgba(255, 255, 255, .09);
-  --border-strong: rgba(255, 255, 255, .16);
-  --text: #ededed;
-  --text-2: #a1a1a1;
-  --text-3: #6e6e6e;
-  --accent: #3291ff;
-  --accent-hover: #52a8ff;
-  --accent-soft: rgba(50, 145, 255, .12);
+  --bg: #0b2226;            /* midnight teal */
+  --bg-elevated: #11282b;
+  --surface: #172d31;
+  --surface-2: #21363a;
+  --surface-3: #2d4144;
+  --border: rgba(156, 199, 194, .12);   /* mist */
+  --border-strong: rgba(156, 199, 194, .22);
+  --text: #edf5f2;
+  --text-2: #b7c2c1;
+  --text-3: #8e9c9c;
+  --accent: #ff8a6e;        /* coral, lifted for text on teal */
+  --accent-hover: #ffa48d;
+  --accent-soft: rgba(255, 107, 74, .18);
   --accent-text: #ffffff;
-  --primary: #ededed;
-  --primary-hover: #ffffff;
-  --primary-text: #0a0a0a;
-  --success: #3fcf8e;
-  --success-soft: rgba(63, 207, 142, .12);
-  --warning: #f5a623;
-  --warning-soft: rgba(245, 166, 35, .12);
-  --danger: #ff6369;
-  --danger-soft: rgba(255, 99, 105, .12);
-  --toast-bg: #1a1a1a;
-  --toast-text: #ededed;
+  --primary: #ff6b4a;       /* coral: the call to action */
+  --primary-hover: #ff8063;
+  --primary-text: #1b0a05;
+  --success: #4cc38a;
+  --success-soft: rgba(76, 195, 138, .12);
+  --warning: #e0b45c;
+  --warning-soft: rgba(224, 180, 92, .12);
+  --danger: #ff7b7f;
+  --danger-soft: rgba(255, 123, 127, .12);
+  --toast-bg: #21363a;
+  --toast-text: #edf5f2;
   --shadow-sm: none;
-  --shadow: 0 0 0 1px rgba(255, 255, 255, .02);
-  --shadow-lg: 0 24px 64px -16px rgba(0, 0, 0, .8);
-  --grid-line: rgba(255, 255, 255, .04);
+  --shadow: 0 0 0 1px rgba(156, 199, 194, .03);
+  --shadow-lg: 0 24px 64px -16px rgba(0, 0, 0, .7);
+  --grid-line: rgba(156, 199, 194, .045);
   color-scheme: dark;
 }
 
@@ -130,10 +130,14 @@ svg.icon.icon-xs { width: 13px; height: 13px; vertical-align: -2px; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 22px; font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
 .brand-mark {
   width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; flex: none;
-  background: conic-gradient(from 210deg, #0070f3, #00b8ff, #7928ca, #ff0080, #0070f3); color: #fff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .15);
+  background: linear-gradient(135deg, #2d4144, #0b2226);
+  box-shadow: inset 0 0 0 1px rgba(228, 239, 235, .12);
 }
-.brand-mark svg { width: 15px; height: 15px; stroke-width: 2; }
+.brand-mark svg { width: 22px; height: 22px; stroke-width: 2.2; }
+.brand-mark .ring-outer { stroke: #e4efeb; }
+.brand-mark .ring-inner { stroke: #9cc7c2; stroke-width: 1.8; }
+.brand-mark .glow { fill: #ff6b4a; stroke: none; opacity: .45; }
+.brand-mark .light { fill: #ff8a6e; stroke: none; }
 .brand .version { margin-left: auto; font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--text-3); }
 .nav { display: flex; flex-direction: column; gap: 1px; }
 .nav-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase;
@@ -156,7 +160,7 @@ svg.icon.icon-xs { width: 13px; height: 13px; vertical-align: -2px; }
 .sidebar-footer { border-top: 1px solid var(--border); padding-top: 12px; display: flex; align-items: center; gap: 8px; }
 .avatar {
   width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none;
-  background: linear-gradient(135deg, #0070f3, #7928ca); color: #fff; font-weight: 600; font-size: 12px; text-transform: uppercase;
+  background: linear-gradient(135deg, #ff8a6e, #ff6b4a); color: #1b0a05; font-weight: 600; font-size: 12px; text-transform: uppercase;
 }
 .sidebar-footer .who { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; }
 .sidebar-footer .who strong { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -5,7 +5,7 @@ export function renderLogin(root, { message, onLogin }) {
   mount(root, html`
     <div class="auth-wrap">
       <div class="card auth-card">
-        <div class="brand"><span class="brand-mark">${icon('tunnel')}</span>Cloudify</div>
+        <div class="brand"><span class="brand-mark">${icon('mark')}</span>Cloudify</div>
         <p class="lead">Sign in to manage your tunnels</p>
         <form id="loginForm">
           <div class="form-error ${message ? '' : 'hidden'}" id="loginError">${message || ''}</div>
