@@ -11,8 +11,8 @@
 #   bash safety-check.sh --remove --purge   ...and delete ~/.cloudflared (certificates, tunnel credentials)
 #
 # Without downloading it first:
-#   curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash
-#   curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --kill
+#   curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash -s -- --kill
 
 # shellcheck disable=SC2088  # "~/..." in messages is meant literally
 

@@ -22,7 +22,7 @@ covered by the automated tests).
 2. Open **Ubuntu** from the Start menu, create your Linux user, then install Cloudify as on any Linux:
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh | bash
    ```
 
 3. Continue with [Getting started](getting-started.md). The dashboard (`cloudify serve`) is reachable from
@@ -45,8 +45,8 @@ Notes:
 2. In PowerShell (with [Git for Windows](https://git-scm.com/download/win) installed):
 
    ```powershell
-   git clone https://github.com/yash7158/Cloudify_v2.git
-   cd Cloudify_v2
+   git clone https://github.com/VickyDev810/Cloudify-Tunnel-Manager.git
+   cd Cloudify-Tunnel-Manager
    docker compose -f docker/docker-compose.yml up -d --build
    ```
 
@@ -74,7 +74,7 @@ Everything else is in the [Docker guide](docker.md).
    py -m pip install --user pipx
    py -m pipx ensurepath
    # reopen PowerShell, then:
-   pipx install https://github.com/yash7158/Cloudify_v2/archive/refs/heads/main.zip
+   pipx install https://github.com/VickyDev810/Cloudify-Tunnel-Manager/archive/refs/heads/main.zip
    cloudify --version
    ```
 
@@ -89,7 +89,7 @@ How it differs from Linux and macOS:
 * **SSH sharing:** `cloudify -ssh remote` uses the OpenSSH client built into Windows 10/11.
   `cloudify -ssh host` works, but the remote gets a shell without a terminal (commands and SFTP work,
   full-screen programs such as `vim` don't).
-* **Updating:** `pipx install --force https://github.com/yash7158/Cloudify_v2/archive/refs/heads/main.zip`;
+* **Updating:** `pipx install --force https://github.com/VickyDev810/Cloudify-Tunnel-Manager/archive/refs/heads/main.zip`;
   **removing:** `pipx uninstall cloudify-cli`.
 
 Earlier versions of the README mentioned a Windows `.exe` in the releases section. This version doesn't ship

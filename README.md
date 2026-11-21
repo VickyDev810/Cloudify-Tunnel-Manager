@@ -64,7 +64,7 @@ One script for both. It installs what's missing (Python, pipx, git, cloudflared)
 asks no questions, and can be run again to update:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh | bash
 ```
 
 Options (pass them after `bash -s --`, e.g. `curl ... | bash -s -- --branch dev`):
@@ -88,7 +88,7 @@ installed to `~/.local/bin`. Open a new terminal afterwards if `cloudify` isn't 
 **Updating** (any earlier version, including 1.x installed with the old scripts):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh | bash -s -- --update
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh | bash -s -- --update
 ```
 
 It backs up your settings, replaces the program, moves 1.x dashboard accounts and leaves running tunnels
@@ -106,7 +106,7 @@ installation with pipx also works (experimental). All three are described in
 Everything Docker-related is in [`docker/`](docker/README.md):
 
 ```bash
-git clone https://github.com/yash7158/Cloudify_v2.git && cd Cloudify_v2
+git clone https://github.com/VickyDev810/Cloudify-Tunnel-Manager.git && cd Cloudify-Tunnel-Manager
 docker compose -f docker/docker-compose.yml up -d --build  # build + run, restarts after reboot
 # or without compose:
 docker build -f docker/Dockerfile -t cloudify:latest .
@@ -345,11 +345,11 @@ remove Cloudify completely. It needs only bash, so it also works where Cloudify 
 already removed), and it changes nothing unless you ask:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash                          # list (changes nothing)
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --kill             # stop temporary tunnels and SSH sharing
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --kill-all         # also persistent tunnels and the dashboard (asks first)
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --remove           # uninstall Cloudify and cloudflared, remove auto-start (asks first)
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --remove --purge   # ...and delete ~/.cloudflared (certificates, tunnel keys)
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash                          # list (changes nothing)
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash -s -- --kill             # stop temporary tunnels and SSH sharing
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash -s -- --kill-all         # also persistent tunnels and the dashboard (asks first)
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash -s -- --remove           # uninstall Cloudify and cloudflared, remove auto-start (asks first)
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash -s -- --remove --purge   # ...and delete ~/.cloudflared (certificates, tunnel keys)
 ```
 
 It lists:

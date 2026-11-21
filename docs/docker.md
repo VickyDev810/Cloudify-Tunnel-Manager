@@ -8,8 +8,8 @@ cloudflared (for the image's CPU architecture), cron and the OpenSSH client. All
 ## Quick start with Docker Compose (recommended)
 
 ```bash
-git clone https://github.com/yash7158/Cloudify_v2.git
-cd Cloudify_v2
+git clone https://github.com/VickyDev810/Cloudify-Tunnel-Manager.git
+cd Cloudify-Tunnel-Manager
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
@@ -149,7 +149,7 @@ docker exec cloudify ls /root/.cloudflared/logs             # one log per tunnel
 ## Updating
 
 ```bash
-cd Cloudify_v2
+cd Cloudify-Tunnel-Manager
 git pull
 docker compose -f docker/docker-compose.yml up -d --build
 ```

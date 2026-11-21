@@ -17,7 +17,7 @@ or open a new terminal, so that `brew` is on your PATH.
 ## 2. Cloudify
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh | bash
 ```
 
 The installer:

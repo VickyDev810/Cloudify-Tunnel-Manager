@@ -3,7 +3,7 @@
 ## Update (Linux and macOS)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh | bash -s -- --update
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh | bash -s -- --update
 ```
 
 or, with a copy of the installer, `bash install.sh --update`. This works from **any earlier version**, including
@@ -59,7 +59,7 @@ Node.js is no longer needed; you can remove it if nothing else uses it.
 ## Update in Docker
 
 ```bash
-cd Cloudify_v2 && git pull
+cd Cloudify-Tunnel-Manager && git pull
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
@@ -69,7 +69,7 @@ Data stays in the volume. Coming from the 1.x container (no volume), follow
 ## Update on Windows (native)
 
 ```powershell
-pipx install --force https://github.com/yash7158/Cloudify_v2/archive/refs/heads/main.zip
+pipx install --force https://github.com/VickyDev810/Cloudify-Tunnel-Manager/archive/refs/heads/main.zip
 ```
 
 In WSL, use the Linux command above.
@@ -97,7 +97,7 @@ To install an older program version: `bash install.sh --branch <tag-or-branch>`.
 ## Uninstall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh | bash -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh | bash -s -- --uninstall
 ```
 
 This removes the program (pipx environment, virtualenv, launcher, and a 1.x `pip --user` copy) and keeps:
@@ -111,7 +111,7 @@ removes the auto-start entries, and uninstalls Cloudify and cloudflared. Add `--
 `~/.cloudflared`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash -s -- --remove
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash -s -- --remove
 ```
 
 Or step by step:

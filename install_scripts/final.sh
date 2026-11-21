@@ -4,7 +4,7 @@
 # It always downloads the official installer: running an install.sh found next to the working
 # directory could run a file someone else put there.
 set -euo pipefail
-URL="https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh"
+URL="https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh"
 if command -v curl >/dev/null 2>&1; then
     curl -fsSL "$URL" | bash -s -- "$@"
 else

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Cloudify installer for Linux and macOS (without Docker; for Docker see docker/).
 #
-#   curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh | bash
 #   curl -fsSL .../install.sh | bash -s -- --branch my-branch
 #   curl -fsSL .../install.sh | bash -s -- --update     # update, also from Cloudify 1.x
 #   bash install.sh --local .          # install from a local checkout
@@ -19,7 +19,7 @@
 set -euo pipefail
 ORIGINAL_PATH="$PATH"   # this script adds ~/.local/bin to its own PATH; the user's shell may not have it
 
-REPO_URL="https://github.com/yash7158/Cloudify_v2.git"
+REPO_URL="https://github.com/VickyDev810/Cloudify-Tunnel-Manager.git"
 BRANCH="main"
 LOCAL_SRC=""
 SKIP_CLOUDFLARED=false

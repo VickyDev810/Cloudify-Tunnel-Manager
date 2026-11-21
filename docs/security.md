@@ -117,7 +117,7 @@ Cloudify was removed or on a machine where someone else started tunnels. It runs
 on Windows inside WSL.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/safety-check.sh | bash
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/safety-check.sh | bash
 ```
 
 Without options it **only lists**:

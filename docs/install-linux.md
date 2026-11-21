@@ -4,13 +4,13 @@ One script installs everything Cloudify needs on any common distribution. It ask
 again at any time to repair or update, and never needs Node.js or a build toolchain.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh | bash
 ```
 
 Prefer to read it first? Download, inspect, run:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/yash7158/Cloudify_v2/main/install.sh
+curl -fsSLO https://raw.githubusercontent.com/VickyDev810/Cloudify-Tunnel-Manager/main/install.sh
 less install.sh
 bash install.sh
 ```
@@ -88,11 +88,11 @@ curl -fsSL -o cloudflared https://github.com/cloudflare/cloudflared/releases/lat
 sudo install -m 0755 cloudflared /usr/local/bin/cloudflared
 
 # 2. Cloudify with pipx
-pipx install git+https://github.com/yash7158/Cloudify_v2.git
+pipx install git+https://github.com/VickyDev810/Cloudify-Tunnel-Manager.git
 
 # or in a virtualenv
 python3 -m venv ~/.local/share/cloudify/venv
-~/.local/share/cloudify/venv/bin/pip install git+https://github.com/yash7158/Cloudify_v2.git
+~/.local/share/cloudify/venv/bin/pip install git+https://github.com/VickyDev810/Cloudify-Tunnel-Manager.git
 ln -s ~/.local/share/cloudify/venv/bin/cloudify ~/.local/bin/cloudify
 ```
 
