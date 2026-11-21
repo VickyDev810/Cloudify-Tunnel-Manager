@@ -1,0 +1,45 @@
+# Cloudify with automatic restart. From the repository root:
+#   docker compose -f docker/docker-compose.yml up -d
+# (or `cd docker && docker compose up -d`)
+#
+# restart: unless-stopped -> the container (and every tunnel with auto-start
+# enabled) comes back after a server reboot or a crash, unless you stopped it
+# yourself with `docker compose stop`.
+name: cloudify  # project name: volume "cloudify_cloudify-data"
+
+services:
+  cloudify:
+    image: cloudify:latest   # built locally from this repository
+    pull_policy: build       # always build from this checkout; never pull an image named like this
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: cloudify
+    restart: unless-stopped
+    # Host networking: the container shares this machine's network, so in a route "localhost" is this
+    # machine. Services running on the host and the published ports of every other container are
+    # reachable as localhost:PORT, without joining networks. Linux; on Docker Desktop (macOS, Windows)
+    # turn on host networking in its settings first.
+    network_mode: host
+    environment:
+      # By default the dashboard listens on port 8765 of this machine, on every interface, over plain HTTP,
+      # under any address: the server's public or private IP, a domain, a quick tunnel. Anyone who can
+      # reach the port can open the login page, and passwords cross the network unencrypted
+      # (docs/security.md).
+      # Secure mode locks it down: this machine only (127.0.0.1), known names only. Turn it on with
+      # CLOUDIFY_SECURE=1 in docker/.env (next to this file, never committed), or change 0 to 1 here.
+      CLOUDIFY_SECURE: ${CLOUDIFY_SECURE:-0}
+      # Secure mode only: extra names the dashboard may be opened under, comma-separated, e.g.
+      # dash.example.com, or *.trycloudflare.com for every quick tunnel (docs/docker.md).
+      CLOUDIFY_ALLOWED_HOSTS: ${CLOUDIFY_ALLOWED_HOSTS:-}
+      # HTTPS: mount a certificate (volumes below) and uncomment:
+      # CLOUDIFY_SERVE_ARGS: "--ssl-certfile /certs/cert.pem --ssl-keyfile /certs/key.pem"
+    volumes:
+      # Cloudflare login, tunnel credentials/configs, Cloudify accounts
+      - cloudify-data:/root/.cloudflared
+
+  # Services to expose run as usual. Publish their port on this machine (e.g. "7631:80"), then add a
+  # route to host "localhost", port 7631 in the dashboard.
+
+volumes:
+  cloudify-data:

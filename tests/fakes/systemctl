@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+# Fake systemctl --user for tests: really starts/stops the unit ExecStart.
+import sys, os, shlex, subprocess, signal, json
+H=os.path.expanduser("~"); D=os.path.join(H,".config/systemd/user"); ST=os.path.join(H,".fakesystemd.json")
+open(os.path.join(H,".fakesystemd.calls"),"a").write(" ".join(sys.argv[1:])+"\n")
+if os.environ.get("FAKE_NO_SYSTEMD"): sys.exit(1)
+a=[x for x in sys.argv[1:] if x!="--user"]
+st=json.load(open(ST)) if os.path.exists(ST) else {"enabled":[], "pids":{}}
+def save(): json.dump(st,open(ST,"w"))
+def unit(n): return n if n.endswith(".service") else n+".service"
+def alive(p):
+    try: os.kill(p,0); return open(f"/proc/{p}/stat").read().split()[2]!="Z"
+    except Exception: return False
+def stop(u):
+    p=st["pids"].pop(u,None)
+    if p and alive(p): os.kill(p,signal.SIGTERM)
+def start(u):
+    f=os.path.join(D,u)
+    if not os.path.exists(f): print(f"Unit {u} not found.",file=sys.stderr); sys.exit(5)
+    ex=[l.split("=",1)[1] for l in open(f).read().splitlines() if l.startswith("ExecStart=")][0]
+    p=subprocess.Popen(shlex.split(ex), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    st["pids"][u]=p.pid
+if not a or a[0] in("--version",): print("systemd 255"); sys.exit(0)
+c=a[0]
+if c=="status" and len(a)==1: sys.exit(0)
+if c=="daemon-reload": sys.exit(0)
+u=unit(a[1])
+if c=="enable":
+    if not os.path.exists(os.path.join(D,u)): print("not found",file=sys.stderr); sys.exit(1)
+    st["enabled"]=list(set(st["enabled"]+[u])); save(); sys.exit(0)
+if c=="disable": st["enabled"]=[x for x in st["enabled"] if x!=u]; save(); sys.exit(0)
+if c=="is-enabled": sys.exit(0 if u in st["enabled"] else 1)
+if c=="is-active": sys.exit(0 if alive(st["pids"].get(u,0)) else 3)
+if c=="start":
+    if not alive(st["pids"].get(u,0)): start(u)
+    save(); sys.exit(0)
+if c=="restart": stop(u); start(u); save(); sys.exit(0)
+if c=="stop": stop(u); save(); sys.exit(0)
+sys.exit(1)

@@ -1,0 +1,49 @@
+name: tests
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # Ubuntu 24.04: ubuntu-latest (Ubuntu 26.04) has no Python 3.9 builds
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false  # one Python version failing must not cancel the others
+      matrix:
+        python-version: ["3.9", "3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[test]" playwright
+      - run: python -m playwright install --with-deps chromium
+      - run: pytest -v
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - run: CLOUDIFY_DOCKER_TESTS=1 pytest -v tests/test_docker.py
+
+  installer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - run: CLOUDIFY_INSTALL_TESTS=1 pytest -v tests/test_install.py

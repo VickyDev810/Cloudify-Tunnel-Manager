@@ -1,0 +1,19 @@
+# Same as docker/Dockerfile.dockerignore, for builders that ignore per-Dockerfile ignore files
+.git
+.github
+**/__pycache__
+**/*.pyc
+.pytest_cache
+tests
+build
+dist
+*.egg-info
+users.json
+status.json
+docs
+.env
+.env.*
+*.pem
+*.key
+cloudify-replica-*.json
+accounts.json
